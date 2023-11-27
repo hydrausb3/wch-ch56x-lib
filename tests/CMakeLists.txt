@@ -1,0 +1,7 @@
+
+add_subdirectory(test_firmware_hspi)
+add_subdirectory(test_firmware_loopback)
+add_subdirectory(test_firmware_serdes)
+add_subdirectory(test_firmware_unittests)
+add_subdirectory(test_firmware_usb_loopback)
+add_subdirectory(test_firmware_usb_speedtest)
