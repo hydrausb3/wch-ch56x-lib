@@ -1,0 +1,12 @@
+[submodule "submodules/wch-ch56x-bsp"]
+	path = submodules/wch-ch56x-bsp
+	url = https://github.com/hydrausb3/wch-ch56x-bsp.git
+[submodule "submodules/lwrb"]
+	path = submodules/lwrb
+	url = https://github.com/MaJerle/lwrb.git
+[submodule "submodules/nanoprintf"]
+	path = submodules/nanoprintf
+	url = https://github.com/charlesnicholson/nanoprintf
+[submodule "cargs"]
+	path = submodules/cargs
+	url = https://github.com/likle/cargs.git
