@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.17)
-project(hydradancer LANGUAGES C ASM)
+project(wch-ch56x-lib LANGUAGES C ASM)
 
 ## Adding lwrb, setting compiler options
 
@@ -69,15 +69,17 @@ target_include_directories(nanoprintf INTERFACE ${CMAKE_CURRENT_LIST_DIR}/submod
 
 add_subdirectory(src)
 
+if (PROJECT_IS_TOP_LEVEL)
 ## Adding the tests
+    if (DEFINED BUILD_TESTS)
+    add_subdirectory(tests)
+    endif()
 
-if (DEFINED BUILD_TESTS)
-add_subdirectory(tests)
-endif()
+    ## Adding tools
 
-## Adding tools
+    if (DEFINED BUILD_TOOLS)
+    add_subdirectory(tools/firmware_debug_board)
+    endif()
 
-if (DEFINED BUILD_TOOLS)
-add_subdirectory(tools/firmware_debug_board)
 endif()
 
