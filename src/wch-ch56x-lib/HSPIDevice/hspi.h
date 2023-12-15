@@ -1,7 +1,7 @@
-/********************************** (C) COPYRIGHT
-******************************* Copyright (c) 2021 Nanjing Qinheng
-Microelectronics Co., Ltd. Copyright (c) 2022 Benjamin VERNOUX Copyright (c)
-2023 Quarkslab
+/********************************** (C) COPYRIGHT *******************************
+Copyright (c) 2021 Nanjing Qinheng Microelectronics Co., Ltd.
+Copyright (c) 2022 Benjamin VERNOUX
+Copyright (c) 2023 Quarkslab
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
