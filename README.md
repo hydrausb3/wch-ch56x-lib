@@ -20,7 +20,7 @@ Available options
 * POOL_BLOCK_SIZE, POOL_BLOCK_NUM
 * INTERRUPT_QUEUE_SIZE
 
-# Building the tests
+# Building the tests
 
 To build and flash the firmware, see [the build tutorial](BUILD.md).
 
