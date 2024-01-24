@@ -54,7 +54,7 @@ void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 						uint16_t custom_register)
 {
-	endp1_tx_set_new_buffer(buffer, size);
+	endp_tx_set_new_buffer(&usb_device_0, 1, buffer, size);
 }
 
 /* Blink time in ms */
@@ -108,7 +108,7 @@ int main()
 	/* End Synchronization between 2 Boards */
 	/****************************************/
 
-	usb_endpoints_user_handled.endp1_tx_complete = endp1_tx_complete;
+	usb_device_0.endpoints.tx_complete[1] = endp1_tx_complete;
 	serdes_user_handled.serdes_rx_callback = serdes_rx_callback;
 
 	// Finish initializing the descriptor parameters
@@ -116,11 +116,11 @@ int main()
 	init_string_descriptors();
 
 	// Set the USB device parameters
-	usb2_device_set_device_descriptor(&usb2_descriptors.usb_device_descr);
-	usb2_device_set_config_descriptors(usb2_device_configs);
-	usb2_device_set_string_descriptors(device_string_descriptors);
-	usb_device_set_endpoint_mask(ENDPOINT_1_RX | ENDPOINT_1_TX | ENDPOINT_2_RX |
-								 ENDPOINT_2_TX);
+	usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors.usb_device_descr);
+	usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs);
+	usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
+	usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_1_TX | ENDPOINT_2_RX |
+													ENDPOINT_2_TX);
 
 	init_endpoints();
 
@@ -141,15 +141,16 @@ int main()
 		}
 		else
 		{
-			if (usb_device.state == CONFIGURED)
+			if (usb_device_0.state == CONFIGURED)
 			{
-				switch (usb_device.speed)
+				switch (usb_device_0.speed)
 				{
-				case SPEED_USB20: // USB2
-				{
-					if (usb_device.speed != usb_device_old_speed)
+				case USB2_LOWSPEED: // USB2
+				case USB2_FULLSPEED:
+				case USB2_HIGHSPEED: {
+					if (usb_device_0.speed != usb_device_old_speed)
 					{
-						usb_device_old_speed = usb_device.speed;
+						usb_device_old_speed = usb_device_0.speed;
 						LOG("USB2\n");
 					}
 					blink_ms = BLINK_USB2;
@@ -159,11 +160,11 @@ int main()
 					bsp_wait_ms_delay(blink_ms);
 				}
 				break;
-				case SPEED_USB30: // USB3
+				case USB30_SUPERSPEED: // USB3
 				{
-					if (usb_device.speed != usb_device_old_speed)
+					if (usb_device_0.speed != usb_device_old_speed)
 					{
-						usb_device_old_speed = usb_device.speed;
+						usb_device_old_speed = usb_device_0.speed;
 						LOG("USB3\n");
 					}
 					blink_ms = BLINK_USB3;

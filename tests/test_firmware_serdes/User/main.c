@@ -40,6 +40,8 @@ limitations under the License.
 
 #define ENDP_1_15_MAX_PACKET_SIZE 512
 
+__attribute__((aligned(16))) uint8_t endp0_buffer[ENDP_1_15_MAX_PACKET_SIZE]
+	__attribute__((section(".DMADATA")));
 __attribute__((aligned(16))) uint8_t endp1_tx_buffer[ENDP_1_15_MAX_PACKET_SIZE]
 	__attribute__((section(".DMADATA")));
 
@@ -121,16 +123,21 @@ void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 						uint16_t custom_register)
 {
-	endp1_tx_set_new_buffer(buffer, size);
+	endp_tx_set_new_buffer(&usb_device_0, 1, buffer, size);
 }
 
 void init_endpoints(void);
 void init_endpoints(void)
 {
-	endp1_tx.buffer = NULL;
-	endp1_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp1_tx.max_burst = 0;
-	endp1_tx.max_packet_size_with_burst = sizeof(endp1_tx_buffer);
+	usb_device_0.endpoints.rx[0].buffer = endp0_buffer;
+	usb_device_0.endpoints.rx[0].max_packet_size = 512;
+	usb_device_0.endpoints.rx[0].max_burst = 1;
+	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = sizeof(endp0_buffer);
+
+	usb_device_0.endpoints.tx[1].buffer = NULL;
+	usb_device_0.endpoints.tx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[1].max_burst = 0;
+	usb_device_0.endpoints.tx[1].max_packet_size_with_burst = sizeof(endp1_tx_buffer);
 }
 
 bool_t is_board1; /* Return true or false */
@@ -178,7 +185,7 @@ int main()
 	/* End Synchronization between 2 Boards */
 	/****************************************/
 
-	usb_endpoints_user_handled.endp1_tx_complete = endp1_tx_complete;
+	usb_device_0.endpoints.tx_complete[1] = endp1_tx_complete;
 	serdes_user_handled.serdes_rx_callback = serdes_rx_callback;
 
 	if (is_board1)
@@ -188,9 +195,9 @@ int main()
 		usb_device_configs[0] = (uint8_t*)&usb_descriptors.other_descr;
 
 		// Set the USB device parameters
-		usb2_device_set_device_descriptor(&usb_descriptors.usb_device_descr);
-		usb2_device_set_config_descriptors(usb_device_configs);
-		usb_device_set_endpoint_mask(ENDPOINT_1_TX);
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb_descriptors.usb_device_descr);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb_device_configs);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_TX);
 
 		init_endpoints();
 

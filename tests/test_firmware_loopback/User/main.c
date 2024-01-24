@@ -55,7 +55,7 @@ void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 void serdes_rx_callback(uint8_t* buffer, uint16_t size,
 						uint16_t custom_register)
 {
-	endp1_tx_set_new_buffer(buffer, size);
+	endp_tx_set_new_buffer(&usb_device_0, 1, buffer, size);
 }
 
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size);
@@ -129,7 +129,7 @@ int main()
 	/* End Synchronization between 2 Boards */
 	/****************************************/
 
-	usb_endpoints_user_handled.endp1_rx_callback = endp1_rx_callback;
+	usb_device_0.endpoints.rx_callback[1] = endp1_rx_callback;
 	hspi_user_handled.hspi_rx_callback = hspi_rx_callback;
 	hspi_user_handled.hspi_err_crc_num_mismatch_callback =
 		hspi_err_crc_num_mismatch_callback;
@@ -143,24 +143,25 @@ int main()
 		init_string_descriptors();
 
 		// Set the USB device parameters
-		usb3_device_set_device_descriptor(&usb3_descriptors.usb_device_descr);
-		usb2_device_set_device_descriptor(&usb2_descriptors.usb_device_descr);
-		usb3_device_set_config_descriptors(usb3_device_configs);
-		usb2_device_set_config_descriptors(usb2_device_configs);
-		usb3_device_set_bos_descriptor(
-			&usb3_descriptors.capabilities.usb_bos_descr);
-		usb2_device_set_string_descriptors(device_string_descriptors);
-		usb3_device_set_string_descriptors(device_string_descriptors);
-		usb_device_set_endpoint_mask(ENDPOINT_1_RX | ENDPOINT_1_TX);
+		usb_device_set_usb3_device_descriptor(&usb_device_0, &usb3_descriptors.usb_device_descr);
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors.usb_device_descr);
+		usb_device_set_usb3_config_descriptors(&usb_device_0, usb3_device_configs);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs);
+		usb_device_set_bos_descriptor(&usb_device_0,
+									  &usb3_descriptors.capabilities.usb_bos_descr);
+		usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_1_TX);
 
 		init_endpoints();
 
 		if (!bsp_ubtn())
 		{
+			usb_device_0.speed = USB30_SUPERSPEED;
 			usb30_device_init(false);
 		}
 		else
 		{
+			usb_device_0.speed = USB2_HIGHSPEED;
 			usb2_device_init();
 		}
 
@@ -177,18 +178,20 @@ int main()
 				bsp_wait_ms_delay(blink_ms);
 				bsp_uled_off();
 				bsp_wait_ms_delay(blink_ms);
+				LOG_DUMP();
 			}
 			else
 			{
-				if (usb_device.state == CONFIGURED)
+				if (usb_device_0.state == CONFIGURED)
 				{
-					switch (usb_device.speed)
+					switch (usb_device_0.speed)
 					{
-					case SPEED_USB20: // USB2
-					{
-						if (usb_device.speed != usb_device_old_speed)
+					case USB2_LOWSPEED: // USB2
+					case USB2_FULLSPEED:
+					case USB2_HIGHSPEED: {
+						if (usb_device_0.speed != usb_device_old_speed)
 						{
-							usb_device_old_speed = usb_device.speed;
+							usb_device_old_speed = usb_device_0.speed;
 							LOG("USB2\n");
 						}
 						blink_ms = BLINK_USB2;
@@ -198,11 +201,11 @@ int main()
 						bsp_wait_ms_delay(blink_ms);
 					}
 					break;
-					case SPEED_USB30: // USB3
+					case USB30_SUPERSPEED: // USB3
 					{
-						if (usb_device.speed != usb_device_old_speed)
+						if (usb_device_0.speed != usb_device_old_speed)
 						{
-							usb_device_old_speed = usb_device.speed;
+							usb_device_old_speed = usb_device_0.speed;
 							LOG("USB3\n");
 						}
 						blink_ms = BLINK_USB3;
