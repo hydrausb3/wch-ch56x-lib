@@ -103,7 +103,7 @@ if __name__ == "__main__":
     fails = []
     for i in range(len(ep_in)):
         TOTAL_TIME_NS = 0
-        print(f"EP {i}")
+        print(f"EP {i+1}")
         try:
             endp_max_packet_size = ENDP_BURST_SIZE * ep_out[i].wMaxPacketSize
             buffer_out = array.array(
