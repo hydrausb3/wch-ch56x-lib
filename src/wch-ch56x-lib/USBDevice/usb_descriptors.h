@@ -129,13 +129,6 @@ typedef struct __PACKED _USB_BOS_SUPERSPEED_USB_DEVICE_CAPABILITY
 // all their child descriptors. note that USB_BOS_DESCR is expected to be
 // followed contiguously by all its subordinates note that each USB_STRING_DESCR
 // is expected to be followed by its payload
-typedef struct __PACKED
-{
-	const USB_DEV_DESCR* usb_device_descr;
-	const USB_DEV_QUAL_DESCR* usb_device_qualifier_descr;
-	const uint8_t** usb_device_config_descrs;
-	const USB_STRING_DESCR* const* usb_string_descrs;
-} USB2_DEVICE_DESCRIPTORS;
 
 typedef struct __PACKED
 {
@@ -144,6 +137,17 @@ typedef struct __PACKED
 	const uint8_t** usb_device_config_descrs;
 	const USB_STRING_DESCR* const* usb_string_descrs;
 	const USB_BOS_DESCR* usb_bos_descr;
-} USB3_DEVICE_DESCRIPTORS;
+} USB_DEVICE_DESCRIPTORS;
+
+typedef struct __PACKED
+{
+	const USB_DEV_DESCR* usb2_device_descr;
+	const USB_DEV_DESCR* usb3_device_descr;
+	const USB_DEV_QUAL_DESCR* usb_device_qualifier_descr;
+	const uint8_t** usb2_device_config_descrs;
+	const uint8_t** usb3_device_config_descrs;
+	const USB_STRING_DESCR* const* usb_string_descrs;
+	const USB_BOS_DESCR* usb_bos_descr;
+} USB23_DEVICE_DESCRIPTORS;
 
 #endif

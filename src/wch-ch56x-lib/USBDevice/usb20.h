@@ -40,6 +40,8 @@ limitations under the License.
 extern "C" {
 #endif
 
+extern usb_device_t* usb2_backend_current_device;
+
 // USB20 Data structures
 
 // PID according to WCH569 doc, does not correspond to USB packets PIDs
@@ -103,16 +105,10 @@ void usb2_ep0_passthrough_enabled(bool enable);
 /**
  * @brief Called by the USB abstraction layer when new data has been set for the
  * corresponding endpoint
+ * @param endp_num Endpoint number
  * @param size Size of the new data
  */
-void usb2_endp0_tx_ready(uint16_t size);
-void usb2_endp1_tx_ready(uint16_t size);
-void usb2_endp2_tx_ready(uint16_t size);
-void usb2_endp3_tx_ready(uint16_t size);
-void usb2_endp4_tx_ready(uint16_t size);
-void usb2_endp5_tx_ready(uint16_t size);
-void usb2_endp6_tx_ready(uint16_t size);
-void usb2_endp7_tx_ready(uint16_t size);
+void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size);
 
 /**
  * @brief Called by the USB abstraction layer when the user sets a new state for
