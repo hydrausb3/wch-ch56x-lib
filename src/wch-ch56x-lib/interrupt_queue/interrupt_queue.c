@@ -74,12 +74,12 @@ void hydra_interrupt_queue_run(void)
 	for (size_t i = 0; i < sizeof(task_queues) / sizeof(hydra_fifo_t*); ++i)
 	{
 		hydra_interrupt_queue_task_t task;
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_INTERRUPT_QUEUE,
+		LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
 			   "hydra_interrupt_queue_run prio %d \r\n",
 			   sizeof(task_queues) / sizeof(hydra_fifo_t*) - 1 - i);
 		if (fifo_read_n(task_queues[i], &task, 1))
 		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_INTERRUPT_QUEUE,
+			LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
 				   "hydra_interrupt_queue_run prio %d executing task\r\n",
 				   sizeof(task_queues) / sizeof(hydra_fifo_t*) - 1 - i);
 			task.task(task.args);
