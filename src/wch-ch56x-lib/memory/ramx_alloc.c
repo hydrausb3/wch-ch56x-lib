@@ -17,6 +17,7 @@ limitations under the License.
 *******************************************************************************/
 
 #include "wch-ch56x-lib/memory/ramx_alloc.h"
+#include "wch-ch56x-lib/logging/logging.h"
 
 /* Taken from linux kernel */
 #define DIV_ROUND_UP(n, d) (((n) + (d)-1) / (d))
@@ -118,6 +119,7 @@ void* ramx_pool_alloc_blocks(uint8_t num_blocks)
  */
 void* ramx_pool_alloc_bytes(uint32_t num_bytes)
 {
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_pool_alloc_bytes num_bytes %d free %d used %d \r\n", num_bytes, ramx_pool_stats_free(), ramx_pool_stats_used());
 	uint8_t blocks_needed = DIV_ROUND_UP(num_bytes, POOL_BLOCK_SIZE);
 	return ramx_pool_alloc_blocks(blocks_needed);
 }
@@ -129,6 +131,8 @@ void* ramx_pool_alloc_bytes(uint32_t num_bytes)
  */
 void ramx_take_ownership(void* ptr)
 {
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_take_ownership ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
+
 	uint8_t block_index, num_blocks, i;
 
 	if (ptr == 0)
@@ -155,6 +159,8 @@ void ramx_take_ownership(void* ptr)
 
 void ramx_pool_free(void* ptr)
 {
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_pool_free ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
+
 	uint8_t block_index, num_blocks, i;
 	uint8_t num_freed = 0;
 

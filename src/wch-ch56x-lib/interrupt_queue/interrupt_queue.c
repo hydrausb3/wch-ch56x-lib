@@ -43,7 +43,7 @@ bool hydra_interrupt_queue_set_next_task(bool (*func)(uint8_t*), uint8_t* args,
 										 void (*cleanup)(uint8_t*),
 										 uint8_t prio)
 {
-	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_INTERRUPT_QUEUE,
+	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
 		   "hydra_interrupt_queue_set_next_task prio %d\r\n", prio);
 	hydra_interrupt_queue_task_t task;
 	task.task = func;
@@ -97,7 +97,7 @@ void hydra_interrupt_queue_free_all(void)
 		hydra_interrupt_queue_task_t task;
 		while (fifo_read_n(task_queues[i], &task, 1))
 		{
-			// LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_INTERRUPT_QUEUE,
+			// LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
 			// "interrupt_queue_get_next_task prio %d \r\n", sizeof(task_queues) /
 			// sizeof(hydra_fifo_t*) - 1 - i);
 			if (task.cleanup)
