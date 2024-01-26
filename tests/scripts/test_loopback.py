@@ -10,6 +10,7 @@ import random
 import array
 import usb.core
 import usb.util
+import argparse
 
 ENDP_BURST_SIZE = 4
 TOTAL_TIME_NS = 0
@@ -53,11 +54,18 @@ def send_next_packet(head, ep_in, ep_out, endp_max_packet_size, buffer_in, buffe
 
 
 if __name__ == "__main__":
-    # find our device
-    dev = usb.core.find(idVendor=0x16c0, idProduct=0x27d8)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--device_num", default=0,
+                        help="In case multiple devices are found, select the index of the device that will be used.", type=int)
+    args = parser.parse_args()
 
-    if dev is None:
+    # find our device
+    devs = usb.core.find(idVendor=0x16c0, idProduct=0x27d8, find_all=True)
+
+    if devs is None:
         raise ValueError('Device not found')
+
+    dev = list(devs)[args.device_num]
 
     if dev.speed == usb.util.SPEED_SUPER:
         ENDP_BURST_SIZE = 4
