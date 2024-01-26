@@ -133,14 +133,7 @@ endp_tx_set_new_buffer(usb_device_t* usb_device, uint8_t endp_num, uint8_t* cons
 		return false;
 	}
 
-	if (endp_num == 0)
-	{
-		memcpy(ep->buffer, ptr, size);
-	}
-	else
-	{
-		ep->buffer = ptr;
-	}
+	ep->buffer = ptr;
 
 	if (usb_device->speed == USB30_SUPERSPEED)
 		usb3_endpoints_backend_handled.usb3_endp_tx_ready(endp_num, size);

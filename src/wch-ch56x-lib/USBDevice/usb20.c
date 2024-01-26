@@ -624,6 +624,10 @@ usb2_in_transfer_handler(uint8_t endp_num)
 				   "End of IN transfer for ENDP %d \r\n", endp_num);
 			*T_Len = 0;
 			*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
+			if (endp_num == 0)
+			{
+				*usb2_get_rx_endpoint_addr_reg(0) = (uint32_t)usb2_backend_current_device->endpoints.rx[0].buffer;
+			}
 			*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
 			usb2_backend_current_device->endpoints.tx_complete[endp_num](Ack);
 		}
@@ -726,18 +730,13 @@ void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 
 __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 {
-	bool log = false;
 	uint8_t usb_dev_endp = (R8_USB_INT_ST & RB_DEV_ENDP_MASK) & 0xf;
 	uint8_t usb_pid = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK) >> 4;
 
 	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_TRACE, "USBHS_IRQHandler-start\r\n");
 	if (R8_USB_INT_FG & RB_USB_IF_SETUOACT && usb2_backend_current_device->state != POWERED)
 	{
-		log = true;
 		usb_setup_req = *(USB_SETUP*)usb2_backend_current_device->endpoints.rx[0].buffer;
-
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "USB_SETUP");
-		// LOG_USB_SETUP_REQ((USB_SETUP*)&usb_setup_req);
 
 		if (ep0_passthrough_enabled)
 		{
@@ -767,7 +766,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		case 0:
 			if (usb_pid == PID_IN)
 			{
-				log = true;
 				if (ep0_passthrough_enabled)
 				{
 					usb2_in_transfer_handler(usb_dev_endp);
@@ -779,7 +777,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 			}
 			else if (usb_pid == PID_OUT)
 			{
-				log = true;
 				if (ep0_passthrough_enabled)
 				{
 					usb2_out_transfer_handler(usb_dev_endp);
@@ -797,10 +794,8 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		case 5:
 		case 6:
 		case 7:
-			log = true;
 			if (usb_pid == PID_IN)
 			{
-				log = true;
 				usb2_in_transfer_handler(usb_dev_endp);
 			}
 			else if (usb_pid == PID_OUT)
@@ -829,22 +824,5 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		R8_USB_INT_FG = RB_USB_IF_BUSRST;
 	}
 
-	if (log)
-	{
-		log = false;
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "device state ");
-		// LOG_DEVICE_STATE((USB_DEVICE_STATE*)&usb2_backend_current_device->state);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "endp %d \r\n", usb_dev_endp);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "pid %d \r\n", usb_pid);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_USB_INT_ST ");
-		// LOG_8_BITS_REGISTER((uint8_t*)&R8_USB_INT_ST_COPY);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_USB_INT_FG ");
-		// LOG_8_BITS_REGISTER((uint8_t*)&R8_USB_INT_FG_COPY);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_UEP1_TX_CTRL ");
-		// LOG_8_BITS_REGISTER((uint8_t*)&R8_UEP1_TX_CTRL);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_USB_DEV_AD ");
-		// LOG_8_BITS_REGISTER((uint8_t*)&R8_USB_DEV_AD);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "\r\n");
-	}
 	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_TRACE, "USBHS_IRQHandler-end\r\n");
 }
