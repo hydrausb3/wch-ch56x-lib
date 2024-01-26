@@ -87,8 +87,6 @@ void usb30_device_init(bool enable_usb2_fallback)
 	usb2_fallback_enabled = enable_usb2_fallback;
 	PFIC_EnableIRQ(USBSS_IRQn);
 	PFIC_EnableIRQ(LINK_IRQn);
-	usb2_device_deinit();
-	R32_USB_CONTROL = 0;
 
 	// Enable USB
 	USBSS->LINK_CFG = 0x140;
@@ -927,8 +925,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void LINK_IRQHandler(void)
 		}
 		// Successful USB3.0 communication
 		link_sta = 3;
-		PFIC_DisableIRQ(USBHS_IRQn);
-		usb2_device_deinit();
 	}
 
 	if (USBSS->LINK_INT_FLAG & LINK_INACT_FLAG)
