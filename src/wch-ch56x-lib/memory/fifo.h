@@ -127,7 +127,7 @@ _fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 			 uint16_t wr_idx)
 {
 	LOG_IF_LEVEL(
-		LOG_LEVEL_DEBUG,
+		LOG_LEVEL_TRACE,
 		"_fifo_read_n rd_idx=%d wr_idx=%d n=%d free_space=%d count%d \r\n",
 		rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
 		_fifo_get_count(rd_idx, wr_idx, fifo->size));
@@ -140,7 +140,7 @@ _fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 		uint16_t linear_count = MIN(n, wr_idx - rd_idx);
 		uint16_t linear_bytes = linear_count * fifo->type_size;
 		memcpy(buffer, fifo->buffer + rd_idx * fifo->type_size, linear_bytes);
-		LOG_IF_LEVEL(LOG_LEVEL_DEBUG,
+		LOG_IF_LEVEL(LOG_LEVEL_TRACE,
 					 "read rd_idx=%d wr_idx=%d linear_count=%d\r\n", rd_idx, wr_idx,
 					 linear_count);
 		return linear_count;
@@ -149,7 +149,7 @@ _fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 	uint16_t linear_count = MIN(n, fifo->size - rd_idx);
 	uint16_t linear_bytes = linear_count * fifo->type_size;
 	memcpy(buffer, fifo->buffer + rd_idx * fifo->type_size, linear_bytes);
-	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "read rd_idx=%d wr_idx=%d linear_count=%d\r\n",
+	LOG_IF_LEVEL(LOG_LEVEL_TRACE, "read rd_idx=%d wr_idx=%d linear_count=%d\r\n",
 				 rd_idx, wr_idx, linear_count);
 
 	if (n > linear_count)
@@ -157,7 +157,7 @@ _fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 		uint16_t wrap_count = MIN(wr_idx, n - linear_count);
 		uint16_t wrap_bytes = wr_idx * fifo->type_size;
 		memcpy((uint8_t*)buffer + linear_bytes, fifo->buffer, wrap_bytes);
-		LOG_IF_LEVEL(LOG_LEVEL_DEBUG,
+		LOG_IF_LEVEL(LOG_LEVEL_TRACE,
 					 "read rd_idx=%d wr_idx=%d linear_count=%d, wrap_count=%d\r\n",
 					 rd_idx, wr_idx, linear_count, wrap_count);
 		return linear_count + wrap_count;
@@ -173,7 +173,7 @@ _fifo_write_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 			  uint16_t wr_idx)
 {
 	LOG_IF_LEVEL(
-		LOG_LEVEL_DEBUG,
+		LOG_LEVEL_TRACE,
 		"_fifo_write_n rd_idx=%d wr_idx=%d n=%d free_space=%d count=%d \r\n",
 		rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
 		_fifo_get_count(rd_idx, wr_idx, fifo->size));
@@ -187,7 +187,7 @@ _fifo_write_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 		uint16_t linear_count = MIN(free_space, n);
 		uint16_t linear_bytes = linear_count * fifo->type_size;
 		memcpy(fifo->buffer + wr_idx * fifo->type_size, buffer, linear_bytes);
-		LOG_IF_LEVEL(LOG_LEVEL_DEBUG,
+		LOG_IF_LEVEL(LOG_LEVEL_TRACE,
 					 "write rd_idx=%d wr_idx=%d linear_count=%d\r\n", rd_idx,
 					 wr_idx, linear_count);
 		return linear_count;
@@ -203,14 +203,14 @@ _fifo_write_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 		uint16_t wrap_bytes = wrap_count * fifo->type_size;
 		memcpy(fifo->buffer + wr_idx * fifo->type_size + linear_bytes,
 			   (uint8_t*)buffer + linear_bytes, wrap_bytes);
-		LOG_IF_LEVEL(LOG_LEVEL_DEBUG,
+		LOG_IF_LEVEL(LOG_LEVEL_TRACE,
 					 "write rd_idx=%d wr_idx=%d linear_count=%d, wrap_count=%d\r\n",
 					 rd_idx, wr_idx, linear_count, wrap_count);
 		return linear_count + wrap_count;
 	}
 	else
 	{
-		LOG_IF_LEVEL(LOG_LEVEL_DEBUG,
+		LOG_IF_LEVEL(LOG_LEVEL_TRACE,
 					 "write rd_idx=%d wr_idx=%d linear_count=%d\r\n", rd_idx,
 					 wr_idx, linear_count);
 	}
@@ -223,7 +223,7 @@ __attribute__((always_inline)) static inline void
 _fifo_advance_read(hydra_fifo_t* fifo, uint16_t rd_idx, uint16_t offset)
 {
 	uint16_t remaining = fifo->size - rd_idx;
-	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "advance_read rd_idx=%d offset=%d\r\n", rd_idx,
+	LOG_IF_LEVEL(LOG_LEVEL_TRACE, "advance_read rd_idx=%d offset=%d\r\n", rd_idx,
 				 offset);
 
 	if (offset < remaining)
@@ -240,7 +240,7 @@ __attribute__((always_inline)) static inline void
 _fifo_advance_write(hydra_fifo_t* fifo, uint16_t wr_idx, uint16_t offset)
 {
 	uint16_t remaining = fifo->size - wr_idx;
-	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "advance_write wr_idx=%d offset=%d\r\n", wr_idx,
+	LOG_IF_LEVEL(LOG_LEVEL_TRACE, "advance_write wr_idx=%d offset=%d\r\n", wr_idx,
 				 offset);
 
 	if (offset < remaining)
