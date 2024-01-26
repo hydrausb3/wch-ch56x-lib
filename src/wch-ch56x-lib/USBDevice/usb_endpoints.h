@@ -38,7 +38,7 @@ typedef struct USB_ENDPOINT_T
 } USB_ENDPOINT;
 
 /**
- * Note : rx[0] is used for both tx and rx for EP0
+ * Note : rx[0] is used for both tx and rx for EP0, when not in passthrough mode
  */
 typedef struct usb_endpoints_t
 {
