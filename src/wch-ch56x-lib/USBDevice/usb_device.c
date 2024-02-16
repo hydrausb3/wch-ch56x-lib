@@ -24,8 +24,11 @@ uint16_t _default_endp0_user_handled_control_request(USB_SETUP* request,
 {
 	return 0xffff;
 }
-void _default_endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size);
-void _default_endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size) {}
+uint8_t _default_endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size);
+uint8_t _default_endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size)
+{
+	return ENDP_STATE_ACK;
+}
 void _default_endp_tx_complete(TRANSACTION_STATUS status);
 void _default_endp_tx_complete(TRANSACTION_STATUS status) {}
 uint8_t _default_endp_rx_callback(uint8_t* const ptr, uint16_t size);

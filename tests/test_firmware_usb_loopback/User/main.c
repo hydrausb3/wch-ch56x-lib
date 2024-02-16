@@ -132,8 +132,8 @@ uint16_t endp0_user_handled_control_request(USB_SETUP* request,
 	return 0xffff;
 }
 
-void endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size);
-void endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size) {}
+uint8_t endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size);
+uint8_t endp0_passthrough_setup_callback(uint8_t* ptr, uint16_t size) { return ENDP_STATE_ACK; }
 
 void usb2_device_handle_bus_reset(void);
 void usb2_device_handle_bus_reset(void)

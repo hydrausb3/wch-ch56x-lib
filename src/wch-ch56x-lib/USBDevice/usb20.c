@@ -740,10 +740,13 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 
 		if (ep0_passthrough_enabled)
 		{
-			usb2_backend_current_device->endpoints.endp0_passthrough_setup_callback(
+			volatile USB_ENDPOINT* endp0 = &usb2_backend_current_device->endpoints.rx[0];
+
+			endp0->state = usb2_backend_current_device->endpoints.endp0_passthrough_setup_callback(
 				usb2_backend_current_device->endpoints.rx[0].buffer, sizeof(USB_SETUP));
+			*usb2_get_rx_endpoint_addr_reg(0) = (uint32_t)endp0->buffer;
 			R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
-			R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_T_TOG_1;
+			R8_UEP0_RX_CTRL = endp0->state | RB_UEP_T_TOG_1;
 		}
 		else
 		{
@@ -815,11 +818,10 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 	}
 	else if (R8_USB_INT_FG & RB_USB_IF_BUSRST)
 	{
-		// usb2_user_handled.usb2_device_handle_bus_reset();
+		usb2_user_handled.usb2_device_handle_bus_reset();
 		usb2_set_device_address(0);
 		usb2_backend_current_device->addr = 0;
 		usb2_setup_endpoints();
-		// usb2_backend_current_device->speed = SPEED_NONE;
 		usb2_backend_current_device->state = DEFAULT;
 		R8_USB_INT_FG = RB_USB_IF_BUSRST;
 	}
