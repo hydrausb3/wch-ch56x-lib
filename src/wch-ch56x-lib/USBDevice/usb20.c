@@ -623,8 +623,11 @@ usb2_in_transfer_handler(uint8_t endp_num)
 			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
 				   "End of IN transfer for ENDP %d \r\n", endp_num);
 			*T_Len = 0;
-			*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
-			if (endp_num == 0)
+			if (endp_num != 0)
+			{
+				*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
+			}
+			else
 			{
 				*usb2_get_rx_endpoint_addr_reg(0) = (uint32_t)usb2_backend_current_device->endpoints.rx[0].buffer;
 			}

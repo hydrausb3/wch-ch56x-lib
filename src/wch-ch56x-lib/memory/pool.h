@@ -63,6 +63,9 @@ typedef struct hydra_pool_t
 						   .size = _size,                        \
 						   .type_size = sizeof(_type) }
 
+#define HYDRA_POOL_DECLR(_name) \
+	extern hydra_pool_t _name;
+
 /**
  * @brief Get a free pool member
  * @param pool pointer to the pool
