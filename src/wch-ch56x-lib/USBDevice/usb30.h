@@ -119,7 +119,7 @@ extern "C" {
 #define UP_STREAM (2 << 16)
 #define TIE_BRK (1 << 20)
 
-#define UsbSetupBuf ((USB_SETUP*)endp0_buffer) // endpoint 0
+#define UsbSetupBuf ((USB_SETUP*)usb3_backend_current_device->endpoints.rx[0].buffer) // endpoint 0
 #define ENDP0_MAXPACK 512
 
 // status response
@@ -145,6 +145,8 @@ extern "C" {
 	  ENDPOINT_10_TX | ENDPOINT_10_RX | ENDPOINT_11_TX | ENDPOINT_11_RX | \
 	  ENDPOINT_12_TX | ENDPOINT_12_RX | ENDPOINT_13_TX | ENDPOINT_13_RX | \
 	  ENDPOINT_14_TX | ENDPOINT_14_RX | ENDPOINT_15_TX | ENDPOINT_15_RX))
+
+extern usb_device_t* usb3_backend_current_device;
 
 /**
  * @brief Enable USB30 device but without downgrade to USB2
@@ -180,13 +182,7 @@ void usb30_itp_callback(uint32_t ITPCounter);
  * corresponding endpoint
  * @param size Size of the new data
  */
-void usb3_endp1_tx_ready(uint16_t size);
-void usb3_endp2_tx_ready(uint16_t size);
-void usb3_endp3_tx_ready(uint16_t size);
-void usb3_endp4_tx_ready(uint16_t size);
-void usb3_endp5_tx_ready(uint16_t size);
-void usb3_endp6_tx_ready(uint16_t size);
-void usb3_endp7_tx_ready(uint16_t size);
+void usb3_endp_tx_ready(uint8_t endp_num, uint16_t size);
 
 #ifdef __cplusplus
 }

@@ -49,7 +49,7 @@ extern "C" {
     void serdes_rx_callback(uint8_t* buffer, uint16_t size, uint16_t
 custom_register)
     {
-        endp1_tx_set_new_buffer(buffer, size);
+        endp_tx_set_new_buffer(&usb_device_0, 1, buffer, size);
     }
 */
 void log_serdes_init(debug_log_buf_t* buf);
