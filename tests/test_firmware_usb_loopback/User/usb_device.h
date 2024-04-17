@@ -20,6 +20,7 @@ limitations under the License.
 
 #include "definitions.h"
 #include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
+#include "wch-ch56x-lib/USBDevice/usb_device.h"
 #include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
 
 uint8_t hydradancer_product_string_descriptor[] = {
@@ -149,6 +150,9 @@ struct usb_string_descriptors
 const USB_STRING_DESCR* device_string_descriptors[2];
 
 __attribute__((aligned(16)))
+uint8_t endp0_buffer[512]
+	__attribute__((section(".DMADATA")));
+__attribute__((aligned(16)))
 uint8_t endp1_tx_buffer[ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_IN_BURST_LEVEL]
 	__attribute__((section(".DMADATA")));
 __attribute__((aligned(16)))
@@ -226,75 +230,80 @@ void init_string_descriptors(void)
 void init_endpoints(void);
 void init_endpoints(void)
 {
-	endp1_rx.buffer = endp1_rx_buffer;
-	endp1_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp1_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp1_rx.max_packet_size_with_burst = sizeof(endp1_rx_buffer);
+	usb_device_0.endpoints.rx[0].buffer = endp0_buffer;
+	usb_device_0.endpoints.rx[0].max_packet_size = 512;
+	usb_device_0.endpoints.rx[0].max_burst = 1;
+	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = sizeof(endp0_buffer);
 
-	endp1_tx.buffer = NULL;
-	endp1_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp1_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp1_tx.max_packet_size_with_burst = sizeof(endp1_rx_buffer);
+	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
+	usb_device_0.endpoints.rx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = sizeof(endp1_rx_buffer);
 
-	endp2_rx.buffer = endp2_rx_buffer;
-	endp2_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp2_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp2_rx.max_packet_size_with_burst = sizeof(endp2_rx_buffer);
+	usb_device_0.endpoints.tx[1].buffer = NULL;
+	usb_device_0.endpoints.tx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[1].max_packet_size_with_burst = sizeof(endp1_rx_buffer);
 
-	endp2_tx.buffer = NULL;
-	endp2_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp2_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp2_tx.max_packet_size_with_burst = sizeof(endp2_rx_buffer);
+	usb_device_0.endpoints.rx[2].buffer = endp2_rx_buffer;
+	usb_device_0.endpoints.rx[2].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[2].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[2].max_packet_size_with_burst = sizeof(endp2_rx_buffer);
 
-	endp3_rx.buffer = endp3_rx_buffer;
-	endp3_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp3_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp3_rx.max_packet_size_with_burst = sizeof(endp3_rx_buffer);
+	usb_device_0.endpoints.tx[2].buffer = NULL;
+	usb_device_0.endpoints.tx[2].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[2].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = sizeof(endp2_rx_buffer);
 
-	endp3_tx.buffer = NULL;
-	endp3_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp3_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp3_tx.max_packet_size_with_burst = sizeof(endp3_rx_buffer);
+	usb_device_0.endpoints.rx[3].buffer = endp3_rx_buffer;
+	usb_device_0.endpoints.rx[3].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[3].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[3].max_packet_size_with_burst = sizeof(endp3_rx_buffer);
 
-	endp4_rx.buffer = endp4_rx_buffer;
-	endp4_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp4_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp4_rx.max_packet_size_with_burst = sizeof(endp4_rx_buffer);
+	usb_device_0.endpoints.tx[3].buffer = NULL;
+	usb_device_0.endpoints.tx[3].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[3].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[3].max_packet_size_with_burst = sizeof(endp3_rx_buffer);
 
-	endp4_tx.buffer = NULL;
-	endp4_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp4_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp4_tx.max_packet_size_with_burst = sizeof(endp4_rx_buffer);
+	usb_device_0.endpoints.rx[4].buffer = endp4_rx_buffer;
+	usb_device_0.endpoints.rx[4].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[4].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[4].max_packet_size_with_burst = sizeof(endp4_rx_buffer);
 
-	endp5_rx.buffer = endp5_rx_buffer;
-	endp5_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp5_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp5_rx.max_packet_size_with_burst = sizeof(endp5_rx_buffer);
+	usb_device_0.endpoints.tx[4].buffer = NULL;
+	usb_device_0.endpoints.tx[4].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[4].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[4].max_packet_size_with_burst = sizeof(endp4_rx_buffer);
 
-	endp5_tx.buffer = NULL;
-	endp5_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp5_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp5_tx.max_packet_size_with_burst = sizeof(endp5_rx_buffer);
+	usb_device_0.endpoints.rx[5].buffer = endp5_rx_buffer;
+	usb_device_0.endpoints.rx[5].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[5].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[5].max_packet_size_with_burst = sizeof(endp5_rx_buffer);
 
-	endp6_rx.buffer = endp6_rx_buffer;
-	endp6_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp6_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp6_rx.max_packet_size_with_burst = sizeof(endp6_rx_buffer);
+	usb_device_0.endpoints.tx[5].buffer = NULL;
+	usb_device_0.endpoints.tx[5].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[5].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[5].max_packet_size_with_burst = sizeof(endp5_rx_buffer);
 
-	endp6_tx.buffer = NULL;
-	endp6_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp6_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp6_tx.max_packet_size_with_burst = sizeof(endp6_rx_buffer);
+	usb_device_0.endpoints.rx[6].buffer = endp6_rx_buffer;
+	usb_device_0.endpoints.rx[6].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[6].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[6].max_packet_size_with_burst = sizeof(endp6_rx_buffer);
 
-	endp7_rx.buffer = endp7_rx_buffer;
-	endp7_rx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp7_rx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp7_rx.max_packet_size_with_burst = sizeof(endp7_rx_buffer);
+	usb_device_0.endpoints.tx[6].buffer = NULL;
+	usb_device_0.endpoints.tx[6].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[6].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[6].max_packet_size_with_burst = sizeof(endp6_rx_buffer);
 
-	endp7_tx.buffer = NULL;
-	endp7_tx.max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
-	endp7_tx.max_burst = DEF_ENDP_OUT_BURST_LEVEL;
-	endp7_tx.max_packet_size_with_burst = sizeof(endp7_rx_buffer);
+	usb_device_0.endpoints.rx[7].buffer = endp7_rx_buffer;
+	usb_device_0.endpoints.rx[7].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[7].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[7].max_packet_size_with_burst = sizeof(endp7_rx_buffer);
+
+	usb_device_0.endpoints.tx[7].buffer = NULL;
+	usb_device_0.endpoints.tx[7].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[7].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[7].max_packet_size_with_burst = sizeof(endp7_rx_buffer);
 }
 
 #endif
