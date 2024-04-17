@@ -53,8 +53,10 @@ typedef struct usb_endpoints_t
 	/**
    * @brief Called by the USB2 backend in passthrough mode after receiving a
    * SETUP request.
+   * @return new state of endpoint response (ACK 0x00, NAK 0X02, STALL 0X03).
+   * This will set the response for the next transfer (not this one).
    */
-	void (*endp0_passthrough_setup_callback)(uint8_t* ptr, uint16_t size);
+	uint8_t (*endp0_passthrough_setup_callback)(uint8_t* ptr, uint16_t size);
 
 	/**
    * @brief Called by the backend when it has confirmed data has been sent
