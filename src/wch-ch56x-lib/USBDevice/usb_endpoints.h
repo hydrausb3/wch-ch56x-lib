@@ -44,6 +44,7 @@ typedef struct usb_endpoints_t
 {
 	volatile USB_ENDPOINT tx[8];
 	volatile USB_ENDPOINT rx[8];
+
 	/**
    * @brief Process requests unhandled by the backend. Must return 0xffff if it
    * does not handle the request.
@@ -78,6 +79,8 @@ typedef struct usb_endpoints_t
    * This will set the response for the next transfer (not this one).
    */
 	uint8_t (*rx_callback[8])(uint8_t* const ptr, uint16_t size);
+
+	void (*nak_callback)(uint8_t ep_num);
 
 } usb_endpoints_t;
 

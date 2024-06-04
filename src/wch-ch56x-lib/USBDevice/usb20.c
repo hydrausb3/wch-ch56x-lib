@@ -704,6 +704,18 @@ void usb2_endp_tx_set_state_callback(uint8_t endp_num)
 	*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
 }
 
+void usb2_enable_nak(bool enable)
+{
+	if (enable)
+	{
+		R8_USB_INT_EN |= RB_USB_IE_DEV_NAK;
+	}
+	else
+	{
+		R8_USB_INT_EN &= ~RB_USB_IE_DEV_NAK;
+	}
+}
+
 void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 {
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.tx[endp_num];
@@ -737,6 +749,14 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 	uint8_t usb_pid = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK) >> 4;
 
 	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_TRACE, "USBHS_IRQHandler-start\r\n");
+
+	if (!(R8_USB_INT_FG & RB_USB_IF_SETUOACT) && (R8_USB_INT_ST & RB_USB_ST_NAK))
+	{
+		usb2_backend_current_device->endpoints.nak_callback(usb_dev_endp);
+		R8_USB_INT_FG = R8_USB_INT_FG;
+		return;
+	}
+
 	if (R8_USB_INT_FG & RB_USB_IF_SETUOACT && usb2_backend_current_device->state != POWERED)
 	{
 		usb_setup_req = *(USB_SETUP*)usb2_backend_current_device->endpoints.rx[0].buffer;
@@ -800,6 +820,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		case 5:
 		case 6:
 		case 7:
+
 			if (usb_pid == PID_IN)
 			{
 				usb2_in_transfer_handler(usb_dev_endp);
