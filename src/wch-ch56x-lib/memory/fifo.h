@@ -130,11 +130,10 @@ __attribute__((always_inline)) static inline uint16_t
 _fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 			 uint16_t wr_idx)
 {
-	LOG_IF_LEVEL(
-		LOG_LEVEL_TRACE,
-		"_fifo_read_n rd_idx=%d wr_idx=%d n=%d free_space=%d count%d \r\n",
-		rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
-		_fifo_get_count(rd_idx, wr_idx, fifo->size));
+	LOG_IF_LEVEL(LOG_LEVEL_TRACE,
+				 "_fifo_read_n rd_idx=%d wr_idx=%d n=%d free_space=%d count%d \r\n",
+				 rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
+				 _fifo_get_count(rd_idx, wr_idx, fifo->size));
 
 	if (rd_idx == wr_idx || (n > _fifo_get_count(rd_idx, wr_idx, fifo->size)))
 		return 0;
@@ -176,11 +175,10 @@ __attribute__((always_inline)) static inline uint16_t
 _fifo_write_n(hydra_fifo_t* fifo, void* buffer, uint16_t n, uint16_t rd_idx,
 			  uint16_t wr_idx)
 {
-	LOG_IF_LEVEL(
-		LOG_LEVEL_TRACE,
-		"_fifo_write_n rd_idx=%d wr_idx=%d n=%d free_space=%d count=%d \r\n",
-		rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
-		_fifo_get_count(rd_idx, wr_idx, fifo->size));
+	LOG_IF_LEVEL(LOG_LEVEL_TRACE,
+				 "_fifo_write_n rd_idx=%d wr_idx=%d n=%d free_space=%d count=%d \r\n",
+				 rd_idx, wr_idx, n, _fifo_get_free_space(rd_idx, wr_idx, fifo->size),
+				 _fifo_get_count(rd_idx, wr_idx, fifo->size));
 
 	uint16_t free_space = _fifo_get_free_space(rd_idx, wr_idx, fifo->size);
 	if (free_space < n)
@@ -270,6 +268,7 @@ fifo_read(hydra_fifo_t* fifo, void* buffer)
 	uint16_t count_read =
 		_fifo_read_n(fifo, buffer, _fifo_get_count(rd_idx, wr_idx, fifo->size),
 					 rd_idx, wr_idx);
+	_fifo_advance_read(fifo, rd_idx, count_read);
 	hydra_fifo_disable_interrupt(false);
 	return count_read;
 }
