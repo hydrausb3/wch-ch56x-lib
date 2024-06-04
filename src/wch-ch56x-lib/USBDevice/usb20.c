@@ -18,7 +18,6 @@ limitations under the License.
 *******************************************************************************/
 
 #include "wch-ch56x-lib/USBDevice/usb20.h"
-#include "wch-ch56x-lib/USBDevice/usb30.h"
 #include "wch-ch56x-lib/USBDevice/usb_device.h"
 #include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
 
@@ -28,21 +27,16 @@ limitations under the License.
 	  ENDPOINT_12_TX | ENDPOINT_12_RX | ENDPOINT_13_TX | ENDPOINT_13_RX | \
 	  ENDPOINT_14_TX | ENDPOINT_14_RX | ENDPOINT_15_TX | ENDPOINT_15_RX))
 #define USB2_ENDP0_MAX_PACKET_SIZE ((uint8_t)(64))
+#define USB2_EP_MAX_PACKET_SIZE ((uint16_t)(1024))
 
 // the default device is a regular USB3 with the mandatory USB2 compatibility.
 // however, it is possible to separate the USB2 and USB3 devices so that they use different devices.
 usb_device_t* usb2_backend_current_device = &usb_device_0;
 
 static volatile puint8_t desc_head = NULL;
+static volatile uint16_t endp0_current_transfer_size = 0;
 static volatile uint16_t endp0_remaining_bytes = 0;
-static volatile uint16_t endp0_tx_remaining_bytes = 0;
-static volatile uint16_t endp1_tx_remaining_bytes = 0;
-static volatile uint16_t endp2_tx_remaining_bytes = 0;
-static volatile uint16_t endp3_tx_remaining_bytes = 0;
-static volatile uint16_t endp4_tx_remaining_bytes = 0;
-static volatile uint16_t endp5_tx_remaining_bytes = 0;
-static volatile uint16_t endp6_tx_remaining_bytes = 0;
-static volatile uint16_t endp7_tx_remaining_bytes = 0;
+static volatile uint16_t endp_tx_remaining_bytes[8];
 static volatile USB_SETUP usb_setup_req;
 
 static volatile bool ep0_passthrough_enabled = false;
@@ -108,6 +102,12 @@ void usb2_setup_endpoints(void)
 	R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 	R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 
+	if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
+	{
+		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
+		return;
+	}
+
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
@@ -118,6 +118,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[1].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 1, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP4_1_MOD |= RB_UEP1_RX_EN;
 		R32_UEP1_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[1].buffer;
 		R16_UEP1_MAX_LEN = usb2_backend_current_device->endpoints.rx[1].max_packet_size;
@@ -135,6 +140,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_2_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[2].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 2, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP2_3_MOD |= RB_UEP2_RX_EN;
 		R32_UEP2_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[2].buffer;
 		R16_UEP2_MAX_LEN = usb2_backend_current_device->endpoints.rx[2].max_packet_size;
@@ -152,6 +162,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_3_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[3].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 3, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP2_3_MOD |= RB_UEP3_RX_EN;
 		R32_UEP3_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[3].buffer;
 		R16_UEP3_MAX_LEN = usb2_backend_current_device->endpoints.rx[3].max_packet_size;
@@ -169,6 +184,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_4_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[4].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 4, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP4_1_MOD |= RB_UEP4_RX_EN;
 		R32_UEP4_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[4].buffer;
 		R16_UEP4_MAX_LEN = usb2_backend_current_device->endpoints.rx[4].max_packet_size;
@@ -186,6 +206,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_5_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[5].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 5, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP5_6_MOD |= RB_UEP5_RX_EN;
 		R32_UEP5_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[5].buffer;
 		R16_UEP5_MAX_LEN = usb2_backend_current_device->endpoints.rx[5].max_packet_size;
@@ -203,6 +228,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_6_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[6].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 6, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP5_6_MOD |= RB_UEP6_RX_EN;
 		R32_UEP6_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[6].buffer;
 		R16_UEP6_MAX_LEN = usb2_backend_current_device->endpoints.rx[6].max_packet_size;
@@ -220,6 +250,11 @@ void usb2_setup_endpoints(void)
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_7_RX)
 	{
+		if (usb2_backend_current_device->endpoints.rx[7].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 7, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
 		R8_UEP7_MOD |= RB_UEP7_RX_EN;
 		R32_UEP7_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[7].buffer;
 		R16_UEP7_MAX_LEN = usb2_backend_current_device->endpoints.rx[7].max_packet_size;
@@ -229,7 +264,7 @@ void usb2_setup_endpoints(void)
 
 	if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
+		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints, mask %x \r\n", usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS));
 	}
 }
 
@@ -249,11 +284,11 @@ void usb2_ep0_passthrough_enabled(bool enable)
 __attribute__((always_inline)) inline void
 usb2_ep0_set_configuration_callback(void)
 {
-	if (usb2_backend_current_device->current_config == 0)
-	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "ERROR : config should be > 0 \r\n");
-		return;
-	}
+	// if (usb2_backend_current_device->current_config == 0)
+	// {
+	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "ERROR : config should be > 0 \r\n");
+	// 	return;
+	// }
 
 	usb2_reset_endpoints();
 }
@@ -283,154 +318,135 @@ usb2_ep0_request_handler(void)
 
 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
 		   "Received SETUP stage of CTRL transfer \r\n");
-	if (usb_setup_req.bRequest == USB_GET_DESCRIPTOR)
+	if (((usb_setup_req.bRequestType & USB_REQ_TYP_MASK) >> 6) == USB_REQ_TYP_STANDARD)
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-			   "Received GET_DESCRIPTOR standard request, descriptor %d \r\n",
-			   usb_setup_req.wValue.bw.bb0);
-		switch (usb_setup_req.wValue.bw.bb0)
+		if (usb_setup_req.bRequest == USB_GET_DESCRIPTOR)
 		{
-		case USB_DESCR_TYP_DEVICE:
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "DEVICE DESCRIPTOR \r\n");
-			if (usb2_backend_current_device->usb_descriptors.usb2_device_descr != NULL)
-			{
-				desc_head = (puint8_t)usb2_backend_current_device->usb_descriptors.usb2_device_descr;
-				endp0_remaining_bytes =
-					usb2_backend_current_device->usb_descriptors.usb2_device_descr->bLength >
-							usb_setup_req.wLength
-						? usb_setup_req.wLength
-						: usb2_backend_current_device->usb_descriptors.usb2_device_descr->bLength;
-				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "size of device descr %d \r\n",
-					   endp0_remaining_bytes);
-				len = usb2_ep0_next_data_packet_size();
-				memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
-			}
-			break;
-		case USB_DESCR_TYP_CONFIG:
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "CONFIG DESCRIPTOR \r\n");
-			if (usb2_backend_current_device->usb_descriptors.usb2_device_config_descrs[0] != NULL)
-			{
-				uint16_t usb_config_descr_total_size =
-					((USB_CFG_DESCR*)(usb2_backend_current_device->usb_descriptors
-										  .usb2_device_config_descrs[0]))
-						->wTotalLength;
-				desc_head =
-					(puint8_t)usb2_backend_current_device->usb_descriptors.usb2_device_config_descrs[0];
-				endp0_remaining_bytes =
-					usb_config_descr_total_size > usb_setup_req.wLength
-						? usb_setup_req.wLength
-						: usb_config_descr_total_size;
-				len = usb2_ep0_next_data_packet_size();
-				memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
-			}
-			break;
-		case USB_DESCR_TYP_STRING:
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "STRING DESCRIPTOR \r\n");
-			if (usb2_backend_current_device->usb_descriptors.usb_string_descrs != NULL)
-			{
-				uint8_t str_descr_index = usb_setup_req.wValue.bw.bb1;
-				uint16_t usb_str_descr_total_size =
-					((USB_STRING_DESCR*)(usb2_backend_current_device->usb_descriptors
-											 .usb_string_descrs[str_descr_index]))
-						->bLength;
-				desc_head =
-					(puint8_t)
-						usb2_backend_current_device->usb_descriptors.usb_string_descrs[str_descr_index];
-				endp0_remaining_bytes = usb_str_descr_total_size;
-				len = usb2_ep0_next_data_packet_size();
-				memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
-			}
-			break;
-		default:
 			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-				   "Descriptor not currently supported \r\n");
-			len = 0xffff;
-			break;
+				   "Received GET_DESCRIPTOR standard request, descriptor %d \r\n",
+				   usb_setup_req.wValue.bw.bb0);
+			switch (usb_setup_req.wValue.bw.bb0)
+			{
+			case USB_DESCR_TYP_DEVICE:
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "DEVICE DESCRIPTOR \r\n");
+				if (usb2_backend_current_device->usb_descriptors.usb2_device_descr != NULL)
+				{
+					desc_head = (puint8_t)usb2_backend_current_device->usb_descriptors.usb2_device_descr;
+					endp0_remaining_bytes =
+						usb2_backend_current_device->usb_descriptors.usb2_device_descr->bLength >
+								usb_setup_req.wLength
+							? usb_setup_req.wLength
+							: usb2_backend_current_device->usb_descriptors.usb2_device_descr->bLength;
+					LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "size of device descr %d \r\n",
+						   endp0_remaining_bytes);
+					len = usb2_ep0_next_data_packet_size();
+					memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
+				}
+				break;
+			case USB_DESCR_TYP_CONFIG:
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "CONFIG DESCRIPTOR \r\n");
+				if (usb2_backend_current_device->usb_descriptors.usb2_device_config_descrs[0] != NULL)
+				{
+					uint16_t usb_config_descr_total_size =
+						((USB_CFG_DESCR*)(usb2_backend_current_device->usb_descriptors
+											  .usb2_device_config_descrs[0]))
+							->wTotalLength;
+					desc_head =
+						(puint8_t)usb2_backend_current_device->usb_descriptors.usb2_device_config_descrs[0];
+					endp0_remaining_bytes =
+						usb_config_descr_total_size > usb_setup_req.wLength
+							? usb_setup_req.wLength
+							: usb_config_descr_total_size;
+					len = usb2_ep0_next_data_packet_size();
+					memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
+				}
+				break;
+			case USB_DESCR_TYP_STRING:
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "STRING DESCRIPTOR \r\n");
+				if (usb2_backend_current_device->usb_descriptors.usb_string_descrs != NULL)
+				{
+					uint8_t str_descr_index = usb_setup_req.wValue.bw.bb1;
+					uint16_t usb_str_descr_total_size =
+						((USB_STRING_DESCR*)(usb2_backend_current_device->usb_descriptors
+												 .usb_string_descrs[str_descr_index]))
+							->bLength;
+					desc_head =
+						(puint8_t)
+							usb2_backend_current_device->usb_descriptors.usb_string_descrs[str_descr_index];
+					endp0_remaining_bytes = usb_str_descr_total_size;
+					len = usb2_ep0_next_data_packet_size();
+					memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
+				}
+				break;
+			default:
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
+					   "Descriptor not currently supported \r\n");
+				len = 0xffff;
+				break;
+			}
 		}
-	}
-	else if (usb_setup_req.bRequest == USB_SET_ADDRESS)
-	{
-		usb2_backend_current_device->addr = usb_setup_req.wValue.bw.bb1;
-		endp0_remaining_bytes = usb_setup_req.wLength;
-	}
-	else if (usb_setup_req.bRequest == USB_SET_CONFIGURATION)
-	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-			   "Received SET_CONFIGURATION standard request, config %d \r\n",
-			   usb_setup_req.wValue.bw.bb1);
-		usb2_backend_current_device->current_config = usb_setup_req.wValue.bw.bb1;
-		usb2_ep0_set_configuration_callback();
-		if (usb_setup_req.wValue.bw.bb1 != 0)
-			usb2_backend_current_device->state = CONFIGURED;
-	}
-	else if (usb_setup_req.bRequest == USB_SET_FEATURE)
-	{
-		if (usb_setup_req.wValue.w ==
-			ENDPOINT_HALT) // reset endpoint toggle to DATA0
+		else if (usb_setup_req.bRequest == USB_SET_ADDRESS)
 		{
-			usb2_reset_endpoints();
+			usb2_backend_current_device->addr = usb_setup_req.wValue.bw.bb1;
+			endp0_remaining_bytes = usb_setup_req.wLength;
+		}
+		else if (usb_setup_req.bRequest == USB_SET_CONFIGURATION)
+		{
+			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
+				   "Received SET_CONFIGURATION standard request, config %d \r\n",
+				   usb_setup_req.wValue.bw.bb1);
+			usb2_backend_current_device->current_config = usb_setup_req.wValue.bw.bb1;
+			usb2_ep0_set_configuration_callback();
+			if (usb_setup_req.wValue.bw.bb1 != 0)
+				usb2_backend_current_device->state = CONFIGURED;
+		}
+		else if (usb_setup_req.bRequest == USB_SET_FEATURE)
+		{
+			if (usb_setup_req.wValue.w ==
+				ENDPOINT_HALT) // reset endpoint toggle to DATA0
+			{
+				usb2_reset_endpoints();
+			}
 		}
 	}
 	else
 	{
-		uint8_t* buffer = NULL;
-		len = usb2_backend_current_device->endpoints.endp0_user_handled_control_request(
-			(USB_SETUP*)&usb_setup_req, &buffer);
-
-		if (len > 0)
+		if (usb_setup_req.bRequestType & USB_REQ_TYP_IN)
 		{
-			if (buffer == NULL)
+			uint8_t* buffer = NULL;
+			len = usb2_backend_current_device->endpoints.endp0_user_handled_control_request(
+				(USB_SETUP*)&usb_setup_req, &buffer);
+			if (len > 0)
 			{
-				return 0xffff;
+				if (buffer == NULL)
+				{
+					return 0xffff;
+				}
+				desc_head = (puint8_t)buffer;
+				endp0_remaining_bytes = len;
+				len = usb2_ep0_next_data_packet_size();
+				memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
 			}
-			desc_head = (puint8_t)buffer;
-			endp0_remaining_bytes = len;
-			len = usb2_ep0_next_data_packet_size();
-			memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
-		}
-	}
-
-	return len;
-}
-
-/**
- * @fn usb2_ep0_in_prepare_next
- * @brief Called by usb2_ep0_in_handler. This marks the end of an IN transfer
- *(data from device to host), and returns the length of data left to be sent.
- **/
-__attribute__((always_inline)) static inline uint16_t
-usb2_ep0_in_prepare_next(void)
-{
-	switch (usb_setup_req.bRequest)
-	{
-	case USB_GET_DESCRIPTOR: {
-		uint16_t len = usb2_ep0_next_data_packet_size();
-		endp0_remaining_bytes -= len;
-		desc_head += len;
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-			   "ENDP0 IN Callback remaining_bytes : %d\r\n", endp0_remaining_bytes);
-	}
-		return usb2_ep0_next_data_packet_size();
-		break;
-	case USB_SET_ADDRESS:
-		// Even though the address is received in the SETUP stage, the STATUS stage
-		// must be finished with address 0 and new address set after that.
-		if (usb2_set_device_address(usb2_backend_current_device->addr))
-		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Set address to %d \r\n",
-				   usb2_backend_current_device->addr);
-			usb2_backend_current_device->state = ADDRESS;
 		}
 		else
 		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Failed to set address to %d \r\n",
-				   usb2_backend_current_device->addr);
+			if (usb_setup_req.wLength == 0)
+			{
+				usb2_backend_current_device->endpoints.endp0_user_handled_control_request(
+					(USB_SETUP*)&usb_setup_req, NULL);
+				return 0;
+			}
+			// there should be an enforcement for the max size ep0 can receive
+			// else if (usb2_backend_current_device->endpoints.rx[0].max_packet_size_with_burst < usb_setup_req.wLength)
+			// {
+			// 	return 0xffff;
+			// }
+			endp0_remaining_bytes = usb_setup_req.wLength;
+			len = usb_setup_req.wLength;
 		}
-		break;
-	default:
-		break;
 	}
-	return 0;
+	endp0_current_transfer_size = endp0_remaining_bytes;
+	return len;
 }
 
 /**
@@ -442,32 +458,35 @@ __attribute__((always_inline)) static inline void
 usb2_ep0_setup_stage_handler(void)
 {
 	uint16_t len = usb2_ep0_request_handler();
-	if (len != 0xffff)
+	if (usb_setup_req.bRequestType & USB_REQ_TYP_IN)
 	{
-		// either sends data, or ZLP (zero length packet)(in case there is no data
-		// packet, like for Set_Address)
-		R16_UEP0_T_LEN = len;
-		R8_UEP0_TX_CTRL =
-			UEP_T_RES_ACK |
-			RB_UEP_T_TOG_1; // endp0 is in fact constituted of two endpoints : ENDP0
-		// IN and ENDP0 OUT. Therefore, they both have their own
-		// toggle bit
-		R8_UEP0_RX_CTRL =
-			UEP_R_RES_ACK |
-			RB_UEP_R_TOG_1; // here we set both toggle bits to DATA1, for either the
-		// DATA IN or DATA OUT stage
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_UEP0_TX_CTRL ");
-		// LOG_8_BITS_REGISTER((puint8_t)&R8_UEP0_TX_CTRL);
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_UEP0_RX_CTRL ");
-		// LOG_8_BITS_REGISTER((puint8_t)&R8_UEP0_RX_CTRL);
+		if (len != 0xffff)
+		{
+			// send data
+			R16_UEP0_T_LEN = len;
+			R8_UEP0_TX_CTRL =
+				UEP_T_RES_ACK |
+				RB_UEP_T_TOG_1;
+		}
+		else
+		{
+			R16_UEP0_T_LEN = 0;
+			R8_UEP0_TX_CTRL = UEP_T_RES_STALL;
+			R8_UEP0_RX_CTRL =
+				UEP_R_RES_ACK | RB_UEP_R_TOG_1; //prepare Status stage
+		}
 	}
 	else
 	{
-		// Unsupported request
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "stall \r\n");
-		R16_UEP0_T_LEN = 0;
-		R8_UEP0_TX_CTRL = UEP_T_RES_STALL;
-		R8_UEP0_RX_CTRL = UEP_R_RES_STALL;
+		if (usb_setup_req.wLength == 0)
+		{
+			R16_UEP0_T_LEN = 0;
+			R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1; // prepare Status stage
+		}
+		else
+		{
+			R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+		}
 	}
 }
 
@@ -478,38 +497,65 @@ usb2_ep0_setup_stage_handler(void)
  **/
 __attribute__((always_inline)) static inline void usb2_ep0_in_handler(void)
 {
-	uint16_t len = usb2_ep0_in_prepare_next();
 	// transmission complete
-	if (len == 0)
+	if (usb_setup_req.bRequestType & USB_REQ_TYP_IN)
 	{
-		if (usb_setup_req.bRequestType & USB_REQ_TYP_IN)
+		uint16_t len = usb2_ep0_next_data_packet_size();
+		endp0_remaining_bytes -= len;
+		desc_head += len;
+
+		if (endp0_remaining_bytes == 0)
 		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "PID IN transmission complete \r\n");
-			R16_UEP0_T_LEN = 0;
-			R8_UEP0_TX_CTRL = UEP_T_RES_STALL;
-			R8_UEP0_RX_CTRL = UEP_R_RES_ACK |
-							  RB_UEP_R_TOG_1; // prepare for Status stage, with DATA
-			// OUT sending ZLP (zero-length packet)
-			desc_head = 0;
+			// Do not forget ZLP in case we only send full-sized packets : the host knows when the transfer is finished
+			// either by receiving a short packet (why would the device send a short packet if it has more to send ?) or a ZLP (zero-length packet)
+			if ((endp0_current_transfer_size % USB2_ENDP0_MAX_PACKET_SIZE) == 0 && len != 0)
+			{
+				R16_UEP0_T_LEN = 0;
+				R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | (uint8_t)UEP_T_RES_ACK;
+				R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1; // alternate between DATA0 and DATA1
+			}
+			else
+			{
+				desc_head = NULL;
+				R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | (uint8_t)UEP_T_RES_NAK;
+				R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1; // prepare Status stage
+			}
 		}
 		else
 		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-				   "Received STATUS for OUT transaction \r\n");
-			R16_UEP0_T_LEN = 0;
-			R8_UEP0_TX_CTRL = UEP_T_RES_STALL; // nothing to transmit
-			R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0; // keep listening
+			len = usb2_ep0_next_data_packet_size();
+			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Sending next %d bytes endp0 \r\n",
+				   len);
+			memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
+			R16_UEP0_T_LEN = len;
+			R8_UEP0_TX_CTRL =
+				(R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | (uint8_t)UEP_T_RES_ACK;
+			R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1; // alternate between DATA0 and DATA1
 		}
 	}
 	else
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Sending next %d bytes endp0 \r\n",
-			   len);
-		memcpy(usb2_backend_current_device->endpoints.rx[0].buffer, desc_head, len);
-		R16_UEP0_T_LEN = len;
-		R8_UEP0_TX_CTRL ^= RB_UEP_T_TOG_1; // alternate between DATA0 and DATA1
-		R8_UEP0_TX_CTRL =
-			(R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | (uint8_t)UEP_T_RES_ACK;
+		if (usb_setup_req.bRequest == USB_SET_ADDRESS)
+		{
+			// Even though the address is received in the SETUP stage, the STATUS stage
+			// must be finished with address 0 and new address set after that.
+			if (usb2_set_device_address(usb2_backend_current_device->addr))
+			{
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Set address to %d \r\n",
+					   usb2_backend_current_device->addr);
+				usb2_backend_current_device->state = ADDRESS;
+			}
+			else
+			{
+				LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Failed to set address to %d \r\n",
+					   usb2_backend_current_device->addr);
+			}
+		}
+		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
+			   "Received STATUS for OUT transaction \r\n");
+		R16_UEP0_T_LEN = 0;
+		R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | UEP_T_RES_NAK; // nothing to transmit
+		R8_UEP0_RX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1; // keep listening
 	}
 }
 
@@ -524,72 +570,43 @@ __attribute__((always_inline)) static inline void usb2_ep0_out_handler(void)
 	{
 		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
 			   "Received STATUS for IN transaction \r\n");
-		// LOG_USB_SETUP_REQ((USB_SETUP*)&usb_setup_req);
 
 		// process Status stage
 		if (usb2_ep0_next_data_packet_size() > 0)
 		{
 			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "setup command not finished\r\n");
-			R8_UEP0_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_1;
+			R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
 		}
 		else
 		{
 			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "setup command finished\r\n");
-			R8_UEP0_RX_CTRL = UEP_T_RES_STALL;
+			R8_UEP0_RX_CTRL = UEP_R_RES_ACK;
 			R16_UEP0_T_LEN = 0;
-			R8_UEP0_TX_CTRL = 0;
-			usb2_backend_current_device->endpoints.tx_complete[0](Ack);
+			R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
 		}
 	}
 	else
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-			   "PID OUT transmission complete, preparing for IN STATUS \r\n");
-		R16_UEP0_T_LEN =
-			0; // sending a ZLP for the DATA IN packet of the STATUS stage
-		R8_UEP0_RX_CTRL = UEP_R_RES_STALL;
-		R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
-	}
-}
+		endp0_remaining_bytes -= R16_USB_RX_LEN;
 
-/**
- * @brief Get the remaining number of bytes left to send
- * @param endp_num endpoint number
- * @return
- */
-__attribute__((always_inline)) static inline vuint16_t*
-usb2_get_tx_endpoint_remaining_len(uint8_t endp_num)
-{
-	switch (endp_num)
-	{
-	case ENDP_0:
-		return &endp0_tx_remaining_bytes;
-	case ENDP_1:
-		return &endp1_tx_remaining_bytes;
-		break;
-	case ENDP_2:
-		return &endp2_tx_remaining_bytes;
-		break;
-	case ENDP_3:
-		return &endp3_tx_remaining_bytes;
-		break;
-	case ENDP_4:
-		return &endp4_tx_remaining_bytes;
-		break;
-	case ENDP_5:
-		return &endp5_tx_remaining_bytes;
-		break;
-	case ENDP_6:
-		return &endp6_tx_remaining_bytes;
-		break;
-	case ENDP_7:
-		return &endp7_tx_remaining_bytes;
-		break;
-	default:
-		return NULL;
-		break;
+		if (endp0_remaining_bytes == 0)
+		{
+			R32_UEP0_RT_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[0].buffer;
+			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
+				   "PID OUT transmission complete, preparing for IN STATUS \r\n");
+			R16_UEP0_T_LEN =
+				0; // sending a ZLP for the DATA IN packet of the STATUS stage
+			R8_UEP0_TX_CTRL = UEP_T_RES_ACK | RB_UEP_T_TOG_1;
+			usb2_backend_current_device->endpoints.endp0_user_handled_control_request(
+				(USB_SETUP*)&usb_setup_req, NULL);
+		}
+		else
+		{
+			R32_UEP0_RT_DMA += R16_USB_RX_LEN;
+			R8_UEP0_RX_CTRL = (R8_UEP0_RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+			R8_UEP0_RX_CTRL ^= RB_UEP_R_TOG_1; // switch between DATA0/DATA1 toggle
+		}
 	}
-	return NULL;
 }
 
 /**
@@ -603,7 +620,7 @@ usb2_in_transfer_handler(uint8_t endp_num)
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.tx[endp_num];
 	vuint8_t* TX_CTRL = usb2_get_tx_endpoint_ctrl_reg(endp_num);
 	vuint16_t* T_Len = usb2_get_tx_endpoint_len_reg(endp_num);
-	vuint16_t* tx_remaining_bytes = usb2_get_tx_endpoint_remaining_len(endp_num);
+	vuint16_t* tx_remaining_bytes = &endp_tx_remaining_bytes[endp_num];
 
 #ifdef DEBUG
 	if (endp == NULL || TX_CTRL == NULL || T_Len == NULL ||
@@ -620,8 +637,6 @@ usb2_in_transfer_handler(uint8_t endp_num)
 
 		if (*tx_remaining_bytes == 0)
 		{
-			LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2,
-				   "End of IN transfer for ENDP %d \r\n", endp_num);
 			*T_Len = 0;
 			if (endp_num != 0)
 			{
@@ -638,8 +653,6 @@ usb2_in_transfer_handler(uint8_t endp_num)
 		{
 			*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
 		}
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "ENDP %d TX Remaining bytes : %d \r\n",
-			   endp_num, *tx_remaining_bytes);
 	}
 	else
 	{
@@ -656,6 +669,7 @@ usb2_in_transfer_handler(uint8_t endp_num)
 __attribute__((always_inline)) static inline void
 usb2_out_transfer_handler(uint8_t endp_num)
 {
+	vuint16_t num_bytes_received = R16_USB_RX_LEN; // this register seems to change during interrupts, save it
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.rx[endp_num];
 	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(endp_num);
 
@@ -664,14 +678,9 @@ usb2_out_transfer_handler(uint8_t endp_num)
 		return;
 #endif
 
-	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "R8_UEP1_TX_CTRL ");
-	// LOG_8_BITS_REGISTER((uint8_t*)&R8_UEP1_TX_CTRL);
 	if (endp->buffer != NULL)
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Received %d bytes on ep %d\r\n",
-			   R16_USB_RX_LEN, endp_num);
-		endp->state = usb2_backend_current_device->endpoints.rx_callback[endp_num](endp->buffer, R16_USB_RX_LEN);
-
+		endp->state = usb2_backend_current_device->endpoints.rx_callback[endp_num](endp->buffer, num_bytes_received);
 		*usb2_get_rx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
 		*RX_CTRL = (*RX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
 	}
@@ -686,9 +695,6 @@ void usb2_endp_rx_set_state_callback(uint8_t endp_num)
 {
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.rx[endp_num];
 
-	if (endp == NULL)
-		return;
-
 	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(endp_num);
 	*RX_CTRL = (*RX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
 }
@@ -696,9 +702,6 @@ void usb2_endp_rx_set_state_callback(uint8_t endp_num)
 void usb2_endp_tx_set_state_callback(uint8_t endp_num)
 {
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.tx[endp_num];
-
-	if (endp == NULL)
-		return;
 
 	vuint8_t* TX_CTRL = usb2_get_tx_endpoint_ctrl_reg(endp_num);
 	*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
@@ -721,7 +724,7 @@ void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.tx[endp_num];
 	vuint8_t* TX_CTRL = usb2_get_tx_endpoint_ctrl_reg(endp_num);
 	vuint16_t* T_Len = usb2_get_tx_endpoint_len_reg(endp_num);
-	vuint16_t* tx_remaining_bytes = usb2_get_tx_endpoint_remaining_len(endp_num);
+	vuint16_t* tx_remaining_bytes = &endp_tx_remaining_bytes[endp_num];
 
 #ifdef DEBUG
 	if (endp == NULL || TX_CTRL == NULL || T_Len == NULL ||
@@ -731,12 +734,12 @@ void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 
 	if (*tx_remaining_bytes > 0)
 	{
-		LOG_IF(
-			LOG_LEVEL_DEBUG, LOG_ID_USB2,
-			"WARNING : endp has not finished transferring its current buffer \r\n");
+		LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "WARNING : endp has not finished transferring its current buffer \r\n");
 	}
 	*tx_remaining_bytes = size;
-	*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
+
+	if (endp_num != 0)
+		*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
 	*T_Len = *tx_remaining_bytes > endp->max_packet_size ? endp->max_packet_size
 														 : *tx_remaining_bytes;
 	*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) |
@@ -781,12 +784,14 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 	else if ((R8_USB_INT_FG & RB_USB_IF_TRANSFER) &&
 			 usb2_backend_current_device->state != POWERED)
 	{
-#ifdef LOG
 		if (!(R8_USB_INT_ST & RB_USB_ST_TOGOK))
 		{
-			// LOG(" TOG MATCH FAIL : ENDP %x pid %x \n", usb_dev_endp, usb_pid);
+			LOG_IF_LEVEL(LOG_LEVEL_DEBUG, " TOG MATCH FAIL : ENDP %x pid %x \n", usb_dev_endp, usb_pid);
+			// what to do here ?
+			// R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
+			// return;
 		}
-#endif
+
 		switch (usb_dev_endp)
 		{
 		case 0:
