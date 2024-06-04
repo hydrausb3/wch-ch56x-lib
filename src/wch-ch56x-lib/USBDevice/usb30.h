@@ -184,6 +184,8 @@ void usb30_itp_callback(uint32_t ITPCounter);
  */
 void usb3_endp_tx_ready(uint8_t endp_num, uint16_t size);
 
+__attribute__((interrupt("WCH-Interrupt-fast"))) void LINK_IRQHandler(void);
+__attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void);
 #ifdef __cplusplus
 }
 #endif
