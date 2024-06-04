@@ -78,6 +78,10 @@ typedef struct hydra_fifo_t
 	volatile uint16_t wr_idx;
 } hydra_fifo_t;
 
+#define HYDRA_FIFO_DECLR(_name, _type, _size)                   \
+	extern uint8_t _name##_buffer[(_size + 1) * sizeof(_type)]; \
+	extern hydra_fifo_t _name
+
 #define HYDRA_FIFO_DEF(_name, _type, _size)              \
 	uint8_t _name##_buffer[(_size + 1) * sizeof(_type)]; \
 	hydra_fifo_t _name = { .buffer = _name##_buffer,     \
