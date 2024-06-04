@@ -124,7 +124,13 @@ void usb2_endp_tx_set_state_callback(uint8_t endp_num);
  */
 void usb2_endp_rx_set_state_callback(uint8_t endp_num);
 
-void USBHS_IRQHandler(void);
+/**
+ * @brief Enable NAK status
+ * @param endp_num
+ */
+void usb2_enable_nak(bool enable);
+
+__attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void);
 
 #ifdef __cplusplus
 }

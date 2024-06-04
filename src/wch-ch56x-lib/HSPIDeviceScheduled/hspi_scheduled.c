@@ -331,7 +331,7 @@ bool hspi_send(uint8_t* buffer, uint16_t size, uint16_t custom_register)
 	hspi_task_args->args.size = size;
 	hspi_task_args->args.custom_register = custom_register;
 	hydra_interrupt_queue_set_next_task(_hspi_send, (uint8_t*)hspi_task_args,
-										_hspi_cleanup, INTERRUPT_QUEUE_LOW_PRIO);
+										_hspi_cleanup);
 	return true;
 }
 
@@ -368,8 +368,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void HSPI_IRQHandler(void)
 					hspi_task_args->args.custom_register =
 						(udf0 & HSPI_USER_DEFINED_MASK) >> 13;
 					hydra_interrupt_queue_set_next_task(
-						_hspi_rx_callback, (uint8_t*)hspi_task_args, _hspi_cleanup,
-						INTERRUPT_QUEUE_LOW_PRIO);
+						_hspi_rx_callback, (uint8_t*)hspi_task_args, _hspi_cleanup);
 				}
 				hspi_rx_buffer_0 = ramx_pool_alloc_bytes(hspi_packet_size);
 				R32_HSPI_RX_ADDR0 = (vuint32_t)hspi_rx_buffer_0;
@@ -391,8 +390,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void HSPI_IRQHandler(void)
 					hspi_task_args->args.custom_register =
 						(udf1 & HSPI_USER_DEFINED_MASK) >> 13;
 					hydra_interrupt_queue_set_next_task(
-						_hspi_rx_callback, (uint8_t*)hspi_task_args, _hspi_cleanup,
-						INTERRUPT_QUEUE_LOW_PRIO);
+						_hspi_rx_callback, (uint8_t*)hspi_task_args, _hspi_cleanup);
 				}
 				hspi_rx_buffer_1 = ramx_pool_alloc_bytes(hspi_packet_size);
 				R32_HSPI_RX_ADDR1 = (vuint32_t)hspi_rx_buffer_1;

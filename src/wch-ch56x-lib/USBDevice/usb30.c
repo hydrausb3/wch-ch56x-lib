@@ -902,7 +902,6 @@ void usb3_endp_tx_ready(uint8_t endp_num, uint16_t size)
  *
  * @return None
  */
-__attribute__((interrupt("WCH-Interrupt-fast"))) void LINK_IRQHandler(void);
 __attribute__((interrupt("WCH-Interrupt-fast"))) void LINK_IRQHandler(void)
 {
 	if (USBSS->LINK_INT_FLAG & LINK_Ux_EXIT_FLAG) // device enter U2
@@ -1091,7 +1090,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void LINK_IRQHandler(void)
  *
  * @return None
  */
-__attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void);
 __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 {
 	static uint32_t count = 0;
@@ -1212,6 +1210,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 		req_len = usb3_backend_current_device->endpoints.endp0_user_handled_control_request(
 			UsbSetupBuf, &buffer);
 
+		SetupLen = req_len;
 		// handle IN non standard requests
 		if (req_len != USB_DESCR_UNSUPPORTED && endp_dir)
 		{
@@ -1245,7 +1244,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 			USBSS->UEP0_TX_CTRL = 0x8010000; // USB30_IN_set(0, DISABLE, STALL, 1, 0);
 			return;
 		}
-		if (req_len != 0)
+		else
 		{
 			if (0x200 < req_len)
 			{
@@ -1265,7 +1264,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 			USBSS->UEP0_RX_CTRL = 0x8010000; // USB30_IN_set(0, DISABLE, STALL, 1, 0);
 			return;
 		}
-		if (req_len != 0)
+		else
 		{
 			if (0x200 < req_len)
 			{

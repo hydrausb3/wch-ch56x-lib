@@ -36,6 +36,8 @@ uint8_t _default_endp_rx_callback(uint8_t* const ptr, uint16_t size)
 {
 	return ENDP_STATE_STALL;
 }
+void _default_nak_callback(uint8_t ep_num);
+void _default_nak_callback(uint8_t ep_num) {}
 
 /**
  * Setting up default handlers here : this prevents the device from crashing and avoid an unnecessary check for handlers that are user-defined.
@@ -62,7 +64,8 @@ usb_device_t usb_device_0 = {
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
-						 _default_endp_rx_callback } }
+						 _default_endp_rx_callback },
+		.nak_callback = _default_nak_callback }
 };
 
 usb_device_t usb_device_1 = {
@@ -87,7 +90,8 @@ usb_device_t usb_device_1 = {
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
-						 _default_endp_rx_callback } }
+						 _default_endp_rx_callback },
+		.nak_callback = _default_nak_callback }
 };
 
 void usb_device_set_addr(usb_device_t* usb_device, uint8_t addr)

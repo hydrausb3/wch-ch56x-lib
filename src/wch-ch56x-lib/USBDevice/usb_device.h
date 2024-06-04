@@ -35,6 +35,16 @@ USB3.0/USB2.0 management in the back.
 #ifndef USB_DEVICE_H
 #define USB_DEVICE_H
 
+// Disable warnings in bsp arising from -pedantic -Wall -Wconversion
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpedantic"
+#pragma GCC diagnostic ignored "-Wvariadic-macros"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include "CH56x_common.h"
+#include "CH56xSFR.h"
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
+#pragma GCC diagnostic pop
 #include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
 #include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
 #include "wch-ch56x-lib/USBDevice/usb_types.h"
@@ -126,15 +136,23 @@ void usb_device_set_endpoint_mask(usb_device_t* usb_device, uint32_t endpoint_ma
 __attribute__((always_inline)) inline static bool
 endp_tx_set_new_buffer(usb_device_t* usb_device, uint8_t endp_num, uint8_t* const ptr, uint16_t size)
 {
+	bsp_disable_interrupt();
 	volatile USB_ENDPOINT* ep = &usb_device->endpoints.tx[endp_num];
-
 	if (size > ep->max_packet_size_with_burst || ptr == 0)
 	{
+		bsp_enable_interrupt();
 		return false;
 	}
 
 	ep->buffer = ptr;
 
+	if (endp_num == 0)
+	{
+		if (usb_device->endpoints.rx[0].buffer == NULL) return false;
+		memcpy(usb_device->endpoints.rx[0].buffer, ptr, size);
+	}
+
+	bsp_enable_interrupt();
 	if (usb_device->speed == USB30_SUPERSPEED)
 		usb3_endpoints_backend_handled.usb3_endp_tx_ready(endp_num, size);
 	else
