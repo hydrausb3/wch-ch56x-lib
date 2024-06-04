@@ -49,11 +49,11 @@ bool test_interrupt_queue_set_tasks(void)
 	hydra_interrupt_queue_init();
 
 	hydra_interrupt_queue_set_next_task(some_random_function, (uint8_t*)&num_run,
-										NULL, INTERRUPT_QUEUE_LOW_PRIO);
+										NULL);
 	hydra_interrupt_queue_set_next_task(some_random_function, (uint8_t*)&num_run,
-										NULL, INTERRUPT_QUEUE_LOW_PRIO);
+										NULL);
 	hydra_interrupt_queue_set_next_task(some_random_function, (uint8_t*)&num_run,
-										NULL, INTERRUPT_QUEUE_LOW_PRIO);
+										NULL);
 
 	hydra_interrupt_queue_run();
 	hydra_interrupt_queue_run();
@@ -75,8 +75,7 @@ bool test_interrupt_queue_overflow(void)
 	for (int i = 0; i < INTERRUPT_QUEUE_SIZE + 5; ++i)
 	{
 		result = hydra_interrupt_queue_set_next_task(some_random_function,
-													 (uint8_t*)&num_run, NULL,
-													 INTERRUPT_QUEUE_LOW_PRIO);
+													 (uint8_t*)&num_run, NULL);
 	}
 
 	for (int i = 0; i < INTERRUPT_QUEUE_SIZE + 5; ++i)
@@ -101,8 +100,7 @@ bool test_interrupt_queue_stress(void)
 		for (int i = 0; i < INTERRUPT_QUEUE_SIZE; ++i)
 		{
 			result = hydra_interrupt_queue_set_next_task(some_random_function,
-														 (uint8_t*)&num_run, NULL,
-														 INTERRUPT_QUEUE_LOW_PRIO);
+														 (uint8_t*)&num_run, NULL);
 			if (!result)
 				return false;
 		}

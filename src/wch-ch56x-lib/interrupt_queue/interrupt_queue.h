@@ -32,8 +32,8 @@ limitations under the License.
 #include <stddef.h>
 #include <stdint.h>
 
-#define INTERRUPT_QUEUE_LOW_PRIO 0
-#define HYDRA_INTERRUPT_QUEUE_HIGH_PRIO 1
+#include "wch-ch56x-lib/logging/logging.h"
+#include "wch-ch56x-lib/memory/fifo.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,6 +47,9 @@ typedef struct HYDRA_INTERRUPT_QUEUE_TASK
 	void (*cleanup)(uint8_t*);
 } hydra_interrupt_queue_task_t;
 
+HYDRA_FIFO_DECLR(task_queue, hydra_interrupt_queue_task_t,
+				 INTERRUPT_QUEUE_SIZE);
+
 /**
  * @brief Initialize (or reset) internal state of interrupt_queue.
  * @param
@@ -58,12 +61,33 @@ void hydra_interrupt_queue_init(void);
  * HYDRA_INTERRUPT_QUEUE_HIGH_PRIO queue, then INTERRUPT_QUEUE_LOW_PRIO.
  * @param
  */
-void hydra_interrupt_queue_run(void);
+__attribute__((always_inline)) static inline void hydra_interrupt_queue_run(void)
+{
+	hydra_interrupt_queue_task_t task;
+	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
+		   "hydra_interrupt_queue_run \r\n");
+	if (fifo_read_n(&task_queue, &task, 1))
+	{
+		LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
+			   "hydra_interrupt_queue_run executing task\r\n");
+		task.task(task.args);
+		if (task.cleanup)
+			task.cleanup(task.args);
+	}
+}
 
 /**
  * @brief Free all task from interrupt_queue and call their cleanup task.
  */
-void hydra_interrupt_queue_free_all(void);
+__attribute__((always_inline)) static inline void hydra_interrupt_queue_free_all(void)
+{
+	hydra_interrupt_queue_task_t task;
+	while (fifo_read_n(&task_queue, &task, 1))
+	{
+		if (task.cleanup)
+			task.cleanup(task.args);
+	}
+}
 
 /**
  * @brief Set next task
@@ -73,13 +97,30 @@ void hydra_interrupt_queue_free_all(void);
  * is scheduled
  * @param cleanup Functions called after func has been executed or when freeing
  * all tasks. Allows cleaning up args for instance.
- * @param prio Either INTERRUPT_QUEUE_LOW_PRIO or
- * HYDRA_INTERRUPT_QUEUE_HIGH_PRIO.
  * @return
  */
-bool hydra_interrupt_queue_set_next_task(bool (*func)(uint8_t*), uint8_t* args,
-										 void (*cleanup)(uint8_t*),
-										 uint8_t prio);
+__attribute__((always_inline)) static inline bool hydra_interrupt_queue_set_next_task(bool (*func)(uint8_t*), uint8_t* args,
+																					  void (*cleanup)(uint8_t*))
+{
+	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_INTERRUPT_QUEUE,
+		   "hydra_interrupt_queue_set_next_task %d\r\n");
+	hydra_interrupt_queue_task_t task;
+	task.task = func;
+	task.args = args;
+	task.cleanup = cleanup;
+
+	uint16_t written = 0;
+
+	written = fifo_write(&task_queue, &task, 1);
+
+	if (written == 0)
+	{
+		LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "Interrupt queue is full\r\n");
+		return false;
+	}
+
+	return true;
+}
 
 /**
  * @brief Peek the next task to be scheduled, to check which function is coming
@@ -87,8 +128,12 @@ bool hydra_interrupt_queue_set_next_task(bool (*func)(uint8_t*), uint8_t* args,
  * @param task task address where the next task will be copied
  * @return
  */
-bool hydra_interrupt_queue_peek_next_task_prio0(
-	hydra_interrupt_queue_task_t* task);
+__attribute__((always_inline)) static inline bool hydra_interrupt_queue_peek_next_task_prio0(
+	hydra_interrupt_queue_task_t* task)
+{
+	uint16_t read = fifo_peek_n(&task_queue, task, 1);
+	return read > 0 ? true : false;
+}
 
 #ifdef __cplusplus
 }
