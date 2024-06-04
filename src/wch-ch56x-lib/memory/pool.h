@@ -84,6 +84,7 @@ hydra_pool_get(hydra_pool_t* pool)
 			return (void*)(pool->pool_members + i * pool->type_size);
 		}
 	}
+	LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "Pool %x is full\r\n", pool);
 	bsp_enable_interrupt();
 	return NULL;
 }
@@ -98,7 +99,7 @@ hydra_pool_free(hydra_pool_t* pool, void* ptr)
 {
 	uint16_t i = ((uint8_t*)(ptr)-pool->pool_members) / pool->type_size;
 	bsp_disable_interrupt();
-	if (i > pool->size || !pool->pool_manager[i])
+	if (i >= pool->size || !pool->pool_manager[i])
 	{
 		bsp_enable_interrupt();
 		return;
