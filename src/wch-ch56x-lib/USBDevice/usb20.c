@@ -810,6 +810,12 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 			{
 				if (ep0_passthrough_enabled)
 				{
+					// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
+					// discard this packet, as even though data has been received it shouldn't be taken into account
+					if (R8_UEP0_RX_CTRL & (UEP_R_RES_NAK | UEP_R_RES_STALL))
+					{
+						break;
+					}
 					usb2_out_transfer_handler(usb_dev_endp);
 				}
 				else
@@ -832,6 +838,12 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 			}
 			else if (usb_pid == PID_OUT)
 			{
+				// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
+				// discard this packet, as even though data has been received it shouldn't be taken into account
+				if (*usb2_get_rx_endpoint_ctrl_reg(usb_dev_endp) & (UEP_R_RES_NAK | UEP_R_RES_STALL))
+				{
+					break;
+				}
 				usb2_out_transfer_handler(usb_dev_endp);
 			}
 			break;
