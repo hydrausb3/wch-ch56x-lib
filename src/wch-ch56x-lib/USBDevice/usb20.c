@@ -36,7 +36,7 @@ usb_device_t* usb2_backend_current_device = &usb_device_0;
 static volatile puint8_t desc_head = NULL;
 static volatile uint16_t endp0_current_transfer_size = 0;
 static volatile uint16_t endp0_remaining_bytes = 0;
-static volatile uint16_t endp_tx_remaining_bytes[8];
+static volatile uint16_t endp_tx_remaining_bytes[16];
 static volatile USB_SETUP usb_setup_req;
 
 static volatile bool ep0_passthrough_enabled = false;
@@ -102,11 +102,11 @@ void usb2_setup_endpoints(void)
 	R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 	R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 
-	if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
-	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
-		return;
-	}
+	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
+	// {
+	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
+	// 	return;
+	// }
 
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_TX)
 	{
@@ -116,6 +116,16 @@ void usb2_setup_endpoints(void)
 		R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[1].state = ENDP_STATE_NAK;
 	}
+
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_9_TX)
+	{
+		R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
+		R32_UEP1_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[9].buffer;
+		R16_UEP1_T_LEN = 0;
+		R8_UEP1_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[9].state = ENDP_STATE_NAK;
+	}
+
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[1].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
@@ -130,6 +140,20 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[1].state = ENDP_STATE_ACK;
 	}
 
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_9_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[9].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 9, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP4_1_MOD |= RB_UEP1_RX_EN;
+		R32_UEP1_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[9].buffer;
+		R16_UEP1_MAX_LEN = usb2_backend_current_device->endpoints.rx[9].max_packet_size;
+		R8_UEP1_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[9].state = ENDP_STATE_ACK;
+	}
+
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_2_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
@@ -138,6 +162,16 @@ void usb2_setup_endpoints(void)
 		R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[2].state = ENDP_STATE_NAK;
 	}
+
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_10_TX)
+	{
+		R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
+		R32_UEP2_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[10].buffer;
+		R16_UEP2_T_LEN = 0;
+		R8_UEP2_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[10].state = ENDP_STATE_NAK;
+	}
+
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_2_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[2].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
@@ -152,6 +186,20 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[2].state = ENDP_STATE_ACK;
 	}
 
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_10_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[10].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 10, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP2_3_MOD |= RB_UEP2_RX_EN;
+		R32_UEP2_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[10].buffer;
+		R16_UEP2_MAX_LEN = usb2_backend_current_device->endpoints.rx[10].max_packet_size;
+		R8_UEP2_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[10].state = ENDP_STATE_ACK;
+	}
+
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_3_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
@@ -159,6 +207,14 @@ void usb2_setup_endpoints(void)
 		R16_UEP3_T_LEN = 0;
 		R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[3].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_11_TX)
+	{
+		R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
+		R32_UEP3_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[11].buffer;
+		R16_UEP3_T_LEN = 0;
+		R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[11].state = ENDP_STATE_NAK;
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_3_RX)
 	{
@@ -173,6 +229,19 @@ void usb2_setup_endpoints(void)
 		R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[3].state = ENDP_STATE_ACK;
 	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_11_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[11].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 11, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP2_3_MOD |= RB_UEP3_RX_EN;
+		R32_UEP3_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[11].buffer;
+		R16_UEP3_MAX_LEN = usb2_backend_current_device->endpoints.rx[11].max_packet_size;
+		R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[11].state = ENDP_STATE_ACK;
+	}
 
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_4_TX)
 	{
@@ -181,6 +250,22 @@ void usb2_setup_endpoints(void)
 		R16_UEP4_T_LEN = 0;
 		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[4].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_8_TX)
+	{
+		R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
+		R32_UEP4_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[8].buffer;
+		R16_UEP4_T_LEN = 0;
+		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[8].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_12_TX)
+	{
+		R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
+		R32_UEP4_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[12].buffer;
+		R16_UEP4_T_LEN = 0;
+		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[12].state = ENDP_STATE_NAK;
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_4_RX)
 	{
@@ -195,6 +280,32 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[4].state = ENDP_STATE_ACK;
 	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_8_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[8].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 8, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP4_1_MOD |= RB_UEP4_RX_EN;
+		R32_UEP4_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[8].buffer;
+		R16_UEP4_MAX_LEN = usb2_backend_current_device->endpoints.rx[8].max_packet_size;
+		R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[8].state = ENDP_STATE_ACK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_12_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[12].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 12, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP4_1_MOD |= RB_UEP4_RX_EN;
+		R32_UEP4_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[12].buffer;
+		R16_UEP4_MAX_LEN = usb2_backend_current_device->endpoints.rx[12].max_packet_size;
+		R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[12].state = ENDP_STATE_ACK;
+	}
 
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_5_TX)
 	{
@@ -203,6 +314,14 @@ void usb2_setup_endpoints(void)
 		R16_UEP5_T_LEN = 0;
 		R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[5].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_13_TX)
+	{
+		R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
+		R32_UEP5_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[13].buffer;
+		R16_UEP5_T_LEN = 0;
+		R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[13].state = ENDP_STATE_NAK;
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_5_RX)
 	{
@@ -217,6 +336,19 @@ void usb2_setup_endpoints(void)
 		R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[5].state = ENDP_STATE_ACK;
 	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_13_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[13].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 13, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP5_6_MOD |= RB_UEP5_RX_EN;
+		R32_UEP5_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[13].buffer;
+		R16_UEP5_MAX_LEN = usb2_backend_current_device->endpoints.rx[13].max_packet_size;
+		R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[13].state = ENDP_STATE_ACK;
+	}
 
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_6_TX)
 	{
@@ -225,6 +357,14 @@ void usb2_setup_endpoints(void)
 		R16_UEP6_T_LEN = 0;
 		R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[6].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_14_TX)
+	{
+		R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
+		R32_UEP6_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[14].buffer;
+		R16_UEP6_T_LEN = 0;
+		R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[14].state = ENDP_STATE_NAK;
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_6_RX)
 	{
@@ -239,6 +379,19 @@ void usb2_setup_endpoints(void)
 		R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[6].state = ENDP_STATE_ACK;
 	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_14_RX)
+	{
+		if (usb2_backend_current_device->endpoints.rx[14].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 14, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP5_6_MOD |= RB_UEP6_RX_EN;
+		R32_UEP6_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[14].buffer;
+		R16_UEP6_MAX_LEN = usb2_backend_current_device->endpoints.rx[14].max_packet_size;
+		R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[14].state = ENDP_STATE_ACK;
+	}
 
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_7_TX)
 	{
@@ -247,6 +400,14 @@ void usb2_setup_endpoints(void)
 		R16_UEP7_T_LEN = 0;
 		R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[7].state = ENDP_STATE_NAK;
+	}
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_15_TX)
+	{
+		R8_UEP7_MOD |= RB_UEP7_TX_EN;
+		R32_UEP7_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[15].buffer;
+		R16_UEP7_T_LEN = 0;
+		R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		usb2_backend_current_device->endpoints.tx[15].state = ENDP_STATE_NAK;
 	}
 	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_7_RX)
 	{
@@ -261,11 +422,24 @@ void usb2_setup_endpoints(void)
 		R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[7].state = ENDP_STATE_ACK;
 	}
-
-	if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
+	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_15_RX)
 	{
-		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints, mask %x \r\n", usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS));
+		if (usb2_backend_current_device->endpoints.rx[15].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "ep %d rx max_packet_size exceeds the %d bytes limit \r\n", 15, USB2_EP_MAX_PACKET_SIZE);
+			return;
+		}
+		R8_UEP7_MOD |= RB_UEP7_RX_EN;
+		R32_UEP7_RX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[15].buffer;
+		R16_UEP7_MAX_LEN = usb2_backend_current_device->endpoints.rx[15].max_packet_size;
+		R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+		usb2_backend_current_device->endpoints.rx[15].state = ENDP_STATE_ACK;
 	}
+
+	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
+	// {
+	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints, mask %x \r\n", usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS));
+	// }
 }
 
 void usb2_reset_endpoints(void) { usb2_setup_endpoints(); }
@@ -824,14 +998,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 				}
 			}
 			break;
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-		case 7:
-
+		default:
 			if (usb_pid == PID_IN)
 			{
 				usb2_in_transfer_handler(usb_dev_endp);
@@ -846,8 +1013,6 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 				}
 				usb2_out_transfer_handler(usb_dev_endp);
 			}
-			break;
-		default:
 			break;
 		}
 
