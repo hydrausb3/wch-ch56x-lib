@@ -37,43 +37,43 @@ usb_device_t* usb3_backend_current_device = &usb_device_0;
 /* Global Variable */
 static volatile uint8_t tx_lmp_port = 0;
 static volatile uint8_t link_sta = 0;
-static volatile uint16_t SetupLen = 0;
-static volatile uint8_t SetupReqCode = 0;
-static uint8_t* volatile pDescr;
+volatile uint16_t SetupLen = 0;
+volatile uint8_t SetupReqCode = 0;
+uint8_t* volatile pDescr;
 static volatile bool usb2_fallback_enabled = false;
 
 // total length received
-static volatile uint16_t ep1_rx_total_length = 0;
-static volatile uint16_t ep2_rx_total_length = 0;
-static volatile uint16_t ep3_rx_total_length = 0;
-static volatile uint16_t ep4_rx_total_length = 0;
-static volatile uint16_t ep5_rx_total_length = 0;
-static volatile uint16_t ep6_rx_total_length = 0;
-static volatile uint16_t ep7_rx_total_length = 0;
+volatile uint16_t ep1_rx_total_length = 0;
+volatile uint16_t ep2_rx_total_length = 0;
+volatile uint16_t ep3_rx_total_length = 0;
+volatile uint16_t ep4_rx_total_length = 0;
+volatile uint16_t ep5_rx_total_length = 0;
+volatile uint16_t ep6_rx_total_length = 0;
+volatile uint16_t ep7_rx_total_length = 0;
 
 // how many burst the host was told it could send at most
-static volatile uint8_t ep1_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep2_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep3_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep4_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep5_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep6_rx_previously_set_max_burst = 0;
-static volatile uint8_t ep7_rx_previously_set_max_burst = 0;
+volatile uint8_t ep1_rx_previously_set_max_burst = 0;
+volatile uint8_t ep2_rx_previously_set_max_burst = 0;
+volatile uint8_t ep3_rx_previously_set_max_burst = 0;
+volatile uint8_t ep4_rx_previously_set_max_burst = 0;
+volatile uint8_t ep5_rx_previously_set_max_burst = 0;
+volatile uint8_t ep6_rx_previously_set_max_burst = 0;
+volatile uint8_t ep7_rx_previously_set_max_burst = 0;
 
-static volatile uint16_t ep1_tx_remaining_length = 0;
-static volatile uint16_t ep2_tx_remaining_length = 0;
-static volatile uint16_t ep3_tx_remaining_length = 0;
-static volatile uint16_t ep4_tx_remaining_length = 0;
-static volatile uint16_t ep5_tx_remaining_length = 0;
-static volatile uint16_t ep6_tx_remaining_length = 0;
-static volatile uint16_t ep7_tx_remaining_length = 0;
-static volatile uint8_t ep1_tx_total_bursts = 0;
-static volatile uint8_t ep2_tx_total_bursts = 0;
-static volatile uint8_t ep3_tx_total_bursts = 0;
-static volatile uint8_t ep4_tx_total_bursts = 0;
-static volatile uint8_t ep5_tx_total_bursts = 0;
-static volatile uint8_t ep6_tx_total_bursts = 0;
-static volatile uint8_t ep7_tx_total_bursts = 0;
+volatile uint16_t ep1_tx_remaining_length = 0;
+volatile uint16_t ep2_tx_remaining_length = 0;
+volatile uint16_t ep3_tx_remaining_length = 0;
+volatile uint16_t ep4_tx_remaining_length = 0;
+volatile uint16_t ep5_tx_remaining_length = 0;
+volatile uint16_t ep6_tx_remaining_length = 0;
+volatile uint16_t ep7_tx_remaining_length = 0;
+volatile uint8_t ep1_tx_total_bursts = 0;
+volatile uint8_t ep2_tx_total_bursts = 0;
+volatile uint8_t ep3_tx_total_bursts = 0;
+volatile uint8_t ep4_tx_total_bursts = 0;
+volatile uint8_t ep5_tx_total_bursts = 0;
+volatile uint8_t ep6_tx_total_bursts = 0;
+volatile uint8_t ep7_tx_total_bursts = 0;
 
 /***************************************************************************
  * @fn     USB3_force
@@ -300,154 +300,6 @@ void usb30_reinit_endpoints(void)
 	usb30_out_clear_interrupt_all(ENDP_7);
 
 	usb30_init_endpoints();
-}
-
-/**
- * @brief Get the current number of bytes received on endpoint
- * @param endp endpoint number
- * @return
- */
-__attribute__((always_inline)) static inline volatile uint16_t*
-usb30_get_rx_endpoint_total_length(uint8_t endp)
-{
-	switch (endp)
-	{
-	case ENDP_1:
-		return &ep1_rx_total_length;
-		break;
-	case ENDP_2:
-		return &ep2_rx_total_length;
-		break;
-	case ENDP_3:
-		return &ep3_rx_total_length;
-		break;
-	case ENDP_4:
-		return &ep4_rx_total_length;
-		break;
-	case ENDP_5:
-		return &ep5_rx_total_length;
-		break;
-	case ENDP_6:
-		return &ep6_rx_total_length;
-		break;
-	case ENDP_7:
-		return &ep7_rx_total_length;
-		break;
-	default:
-		return NULL;
-	}
-}
-
-/**
- * @brief In an OUT transfer, the device doesn't know what size data from the
- * host will be. Since the device sets the max number of bursts it can receive,
- * by having the max number of bursts, the number of actually received bursts
- * can be computed. The host can send any number of packets between 1 and
- * prev_set_max_burst, and we only get the number of remaining bursts, and the
- * size of the last packet, so we need prev_set_max_burst to compute the number
- * of full packets actually received. num_packets_received = prev_set_max_burst
- * - remaining_number_of_packets
- * @param endp endpoint number
- */
-__attribute__((always_inline)) static inline volatile uint8_t*
-usb30_get_rx_endpoint_prev_set_max_burst(uint8_t endp)
-{
-	switch (endp)
-	{
-	case ENDP_1:
-		return &ep1_rx_previously_set_max_burst;
-		break;
-	case ENDP_2:
-		return &ep2_rx_previously_set_max_burst;
-		break;
-	case ENDP_3:
-		return &ep3_rx_previously_set_max_burst;
-		break;
-	case ENDP_4:
-		return &ep4_rx_previously_set_max_burst;
-		break;
-	case ENDP_5:
-		return &ep5_rx_previously_set_max_burst;
-		break;
-	case ENDP_6:
-		return &ep6_rx_previously_set_max_burst;
-		break;
-	case ENDP_7:
-		return &ep7_rx_previously_set_max_burst;
-		break;
-	default:
-		return NULL;
-	}
-}
-
-/**
- * @brief Get the remaining bytes to be sent for endp
- * @param endp endpoint number
- */
-__attribute__((always_inline)) static inline volatile uint16_t*
-usb30_get_tx_endpoint_remaining_length(uint8_t endp)
-{
-	switch (endp)
-	{
-	case ENDP_1:
-		return &ep1_tx_remaining_length;
-		break;
-	case ENDP_2:
-		return &ep2_tx_remaining_length;
-		break;
-	case ENDP_3:
-		return &ep3_tx_remaining_length;
-		break;
-	case ENDP_4:
-		return &ep4_tx_remaining_length;
-		break;
-	case ENDP_5:
-		return &ep5_tx_remaining_length;
-		break;
-	case ENDP_6:
-		return &ep6_tx_remaining_length;
-		break;
-	case ENDP_7:
-		return &ep7_tx_remaining_length;
-		break;
-	default:
-		return NULL;
-	}
-}
-
-/**
- * @brief Get the number of remaining packets to be sent for endp (including a
- * packet of size less than max_packet_size)
- */
-__attribute__((always_inline)) static inline volatile uint8_t*
-usb30_get_tx_endpoint_total_bursts(uint8_t endp)
-{
-	switch (endp)
-	{
-	case ENDP_1:
-		return &ep1_tx_total_bursts;
-		break;
-	case ENDP_2:
-		return &ep2_tx_total_bursts;
-		break;
-	case ENDP_3:
-		return &ep3_tx_total_bursts;
-		break;
-	case ENDP_4:
-		return &ep4_tx_total_bursts;
-		break;
-	case ENDP_5:
-		return &ep5_tx_total_bursts;
-		break;
-	case ENDP_6:
-		return &ep6_tx_total_bursts;
-		break;
-	case ENDP_7:
-		return &ep7_tx_total_bursts;
-		break;
-	default:
-		return NULL;
-	}
 }
 
 /**
@@ -1123,7 +975,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 	uint32_t ep_in = (usb_status >> 0xc) & 1;
 	if (ep != 0)
 	{
-		if (ep_in != 0)
+		if (ep_in == 0)
 		{
 			switch (ep)
 			{
@@ -1134,7 +986,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 			case 5:
 			case 6:
 			case 7:
-				usb30_ep_in_handler(ep);
+				usb30_ep_out_handler(ep);
 				break;
 			}
 			return;
@@ -1148,7 +1000,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBSS_IRQHandler(void)
 		case 5:
 		case 6:
 		case 7:
-			usb30_ep_out_handler(ep);
+			usb30_ep_in_handler(ep);
 			break;
 		}
 		return;

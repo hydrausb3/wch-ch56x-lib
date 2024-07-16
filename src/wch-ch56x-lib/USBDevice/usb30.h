@@ -147,6 +147,190 @@ extern "C" {
 	  ENDPOINT_14_TX | ENDPOINT_14_RX | ENDPOINT_15_TX | ENDPOINT_15_RX))
 
 extern usb_device_t* usb3_backend_current_device;
+extern volatile uint16_t SetupLen;
+extern volatile uint8_t SetupReqCode;
+extern uint8_t* volatile pDescr;
+
+// total length received
+extern volatile uint16_t ep1_rx_total_length;
+extern volatile uint16_t ep2_rx_total_length;
+extern volatile uint16_t ep3_rx_total_length;
+extern volatile uint16_t ep4_rx_total_length;
+extern volatile uint16_t ep5_rx_total_length;
+extern volatile uint16_t ep6_rx_total_length;
+extern volatile uint16_t ep7_rx_total_length;
+
+// how many burst the host was told it could send at most
+extern volatile uint8_t ep1_rx_previously_set_max_burst;
+extern volatile uint8_t ep2_rx_previously_set_max_burst;
+extern volatile uint8_t ep3_rx_previously_set_max_burst;
+extern volatile uint8_t ep4_rx_previously_set_max_burst;
+extern volatile uint8_t ep5_rx_previously_set_max_burst;
+extern volatile uint8_t ep6_rx_previously_set_max_burst;
+extern volatile uint8_t ep7_rx_previously_set_max_burst;
+
+extern volatile uint16_t ep1_tx_remaining_length;
+extern volatile uint16_t ep2_tx_remaining_length;
+extern volatile uint16_t ep3_tx_remaining_length;
+extern volatile uint16_t ep4_tx_remaining_length;
+extern volatile uint16_t ep5_tx_remaining_length;
+extern volatile uint16_t ep6_tx_remaining_length;
+extern volatile uint16_t ep7_tx_remaining_length;
+extern volatile uint8_t ep1_tx_total_bursts;
+extern volatile uint8_t ep2_tx_total_bursts;
+extern volatile uint8_t ep3_tx_total_bursts;
+extern volatile uint8_t ep4_tx_total_bursts;
+extern volatile uint8_t ep5_tx_total_bursts;
+extern volatile uint8_t ep6_tx_total_bursts;
+extern volatile uint8_t ep7_tx_total_bursts;
+
+/**
+ * @brief Get the current number of bytes received on endpoint
+ * @param endp endpoint number
+ * @return
+ */
+__attribute__((always_inline)) static inline volatile uint16_t*
+usb30_get_rx_endpoint_total_length(uint8_t endp)
+{
+	switch (endp)
+	{
+	case ENDP_1:
+		return &ep1_rx_total_length;
+		break;
+	case ENDP_2:
+		return &ep2_rx_total_length;
+		break;
+	case ENDP_3:
+		return &ep3_rx_total_length;
+		break;
+	case ENDP_4:
+		return &ep4_rx_total_length;
+		break;
+	case ENDP_5:
+		return &ep5_rx_total_length;
+		break;
+	case ENDP_6:
+		return &ep6_rx_total_length;
+		break;
+	case ENDP_7:
+		return &ep7_rx_total_length;
+		break;
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * @brief In an OUT transfer, the device doesn't know what size data from the
+ * host will be. Since the device sets the max number of bursts it can receive,
+ * by having the max number of bursts, the number of actually received bursts
+ * can be computed. The host can send any number of packets between 1 and
+ * prev_set_max_burst, and we only get the number of remaining bursts, and the
+ * size of the last packet, so we need prev_set_max_burst to compute the number
+ * of full packets actually received. num_packets_received = prev_set_max_burst
+ * - remaining_number_of_packets
+ * @param endp endpoint number
+ */
+__attribute__((always_inline)) static inline volatile uint8_t*
+usb30_get_rx_endpoint_prev_set_max_burst(uint8_t endp)
+{
+	switch (endp)
+	{
+	case ENDP_1:
+		return &ep1_rx_previously_set_max_burst;
+		break;
+	case ENDP_2:
+		return &ep2_rx_previously_set_max_burst;
+		break;
+	case ENDP_3:
+		return &ep3_rx_previously_set_max_burst;
+		break;
+	case ENDP_4:
+		return &ep4_rx_previously_set_max_burst;
+		break;
+	case ENDP_5:
+		return &ep5_rx_previously_set_max_burst;
+		break;
+	case ENDP_6:
+		return &ep6_rx_previously_set_max_burst;
+		break;
+	case ENDP_7:
+		return &ep7_rx_previously_set_max_burst;
+		break;
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * @brief Get the remaining bytes to be sent for endp
+ * @param endp endpoint number
+ */
+__attribute__((always_inline)) static inline volatile uint16_t*
+usb30_get_tx_endpoint_remaining_length(uint8_t endp)
+{
+	switch (endp)
+	{
+	case ENDP_1:
+		return &ep1_tx_remaining_length;
+		break;
+	case ENDP_2:
+		return &ep2_tx_remaining_length;
+		break;
+	case ENDP_3:
+		return &ep3_tx_remaining_length;
+		break;
+	case ENDP_4:
+		return &ep4_tx_remaining_length;
+		break;
+	case ENDP_5:
+		return &ep5_tx_remaining_length;
+		break;
+	case ENDP_6:
+		return &ep6_tx_remaining_length;
+		break;
+	case ENDP_7:
+		return &ep7_tx_remaining_length;
+		break;
+	default:
+		return NULL;
+	}
+}
+
+/**
+ * @brief Get the number of remaining packets to be sent for endp (including a
+ * packet of size less than max_packet_size)
+ */
+__attribute__((always_inline)) static inline volatile uint8_t*
+usb30_get_tx_endpoint_total_bursts(uint8_t endp)
+{
+	switch (endp)
+	{
+	case ENDP_1:
+		return &ep1_tx_total_bursts;
+		break;
+	case ENDP_2:
+		return &ep2_tx_total_bursts;
+		break;
+	case ENDP_3:
+		return &ep3_tx_total_bursts;
+		break;
+	case ENDP_4:
+		return &ep4_tx_total_bursts;
+		break;
+	case ENDP_5:
+		return &ep5_tx_total_bursts;
+		break;
+	case ENDP_6:
+		return &ep6_tx_total_bursts;
+		break;
+	case ENDP_7:
+		return &ep7_tx_total_bursts;
+		break;
+	default:
+		return NULL;
+	}
+}
 
 /**
  * @brief Enable USB30 device but without downgrade to USB2

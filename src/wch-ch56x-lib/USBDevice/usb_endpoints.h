@@ -42,8 +42,8 @@ typedef struct USB_ENDPOINT_T
  */
 typedef struct usb_endpoints_t
 {
-	volatile USB_ENDPOINT tx[8];
-	volatile USB_ENDPOINT rx[8];
+	volatile USB_ENDPOINT tx[16];
+	volatile USB_ENDPOINT rx[16];
 
 	/**
    * @brief Process requests unhandled by the backend. Must return 0xffff if it
@@ -64,7 +64,7 @@ typedef struct usb_endpoints_t
    * @param status The status of the transaction, sent by the host (ACK if all
    * went well)
    */
-	void (*tx_complete[8])(TRANSACTION_STATUS status);
+	void (*tx_complete[16])(TRANSACTION_STATUS status);
 
 	/**
    * @brief rx_callback[0] is called by the USB2 backend in passthrough mode after receiving an
@@ -78,7 +78,7 @@ typedef struct usb_endpoints_t
    * @return new state of endpoint response (ACK 0x00, NAK 0X02, STALL 0X03).
    * This will set the response for the next transfer (not this one).
    */
-	uint8_t (*rx_callback[8])(uint8_t* const ptr, uint16_t size);
+	uint8_t (*rx_callback[16])(uint8_t* const ptr, uint16_t size);
 
 	void (*nak_callback)(uint8_t ep_num);
 

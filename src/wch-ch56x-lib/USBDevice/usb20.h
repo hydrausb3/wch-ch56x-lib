@@ -61,6 +61,10 @@ typedef struct usb2_user_handled_t
 } usb2_user_handled_t;
 
 extern usb2_user_handled_t usb2_user_handled;
+extern volatile uint16_t endp_tx_remaining_bytes[16];
+extern volatile USB_SETUP current_req;
+extern volatile uint16_t current_req_size;
+extern uint16_t usb2_endp0_max_packet_size;
 
 /**
  * @fn     usb2_device_init
@@ -77,6 +81,13 @@ void usb2_device_init(void);
  * @return None
  */
 void usb2_device_deinit(void);
+
+/**
+ * @fn usb2_setup_endpoints_in_mask
+ * @brief Setup endpoints set in bitmask mask
+ * @param mask Bitmask, endpoints to activate
+ **/
+void usb2_setup_endpoints_in_mask(uint32_t mask);
 
 /**
  * @fn usb2_setup_endpoints

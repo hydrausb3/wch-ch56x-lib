@@ -94,6 +94,14 @@ typedef enum
 #define ENDP_5 0x05
 #define ENDP_6 0x06
 #define ENDP_7 0x07
+#define ENDP_8 0x08
+#define ENDP_9 0x09
+#define ENDP_10 0x0a
+#define ENDP_11 0x0b
+#define ENDP_12 0x0c
+#define ENDP_13 0x0d
+#define ENDP_14 0x0e
+#define ENDP_15 0x0f
 
 #define ENDP_STATE_ACK 0x00
 #define ENDP_STATE_NAK 0x02

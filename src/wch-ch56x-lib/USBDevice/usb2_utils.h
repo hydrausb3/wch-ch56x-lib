@@ -73,24 +73,32 @@ usb2_get_rx_endpoint_ctrl_reg(uint8_t endp_num)
 		return &R8_UEP0_RX_CTRL;
 		break;
 	case ENDP_1:
+	case ENDP_9:
 		return &R8_UEP1_RX_CTRL;
 		break;
 	case ENDP_2:
+	case ENDP_10:
 		return &R8_UEP2_RX_CTRL;
 		break;
 	case ENDP_3:
+	case ENDP_11:
 		return &R8_UEP3_RX_CTRL;
 		break;
 	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
 		return &R8_UEP4_RX_CTRL;
 		break;
 	case ENDP_5:
+	case ENDP_13:
 		return &R8_UEP5_RX_CTRL;
 		break;
 	case ENDP_6:
+	case ENDP_14:
 		return &R8_UEP6_RX_CTRL;
 		break;
 	case ENDP_7:
+	case ENDP_15:
 		return &R8_UEP7_RX_CTRL;
 		break;
 	default:
@@ -114,24 +122,32 @@ usb2_get_tx_endpoint_ctrl_reg(uint8_t endp_num)
 		return &R8_UEP0_TX_CTRL;
 		break;
 	case ENDP_1:
+	case ENDP_9:
 		return &R8_UEP1_TX_CTRL;
 		break;
 	case ENDP_2:
+	case ENDP_10:
 		return &R8_UEP2_TX_CTRL;
 		break;
 	case ENDP_3:
+	case ENDP_11:
 		return &R8_UEP3_TX_CTRL;
 		break;
 	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
 		return &R8_UEP4_TX_CTRL;
 		break;
 	case ENDP_5:
+	case ENDP_13:
 		return &R8_UEP5_TX_CTRL;
 		break;
 	case ENDP_6:
+	case ENDP_14:
 		return &R8_UEP6_TX_CTRL;
 		break;
 	case ENDP_7:
+	case ENDP_15:
 		return &R8_UEP7_TX_CTRL;
 		break;
 	default:
@@ -155,24 +171,32 @@ usb2_get_tx_endpoint_addr_reg(uint8_t endp_num)
 		return &R32_UEP0_RT_DMA;
 		break;
 	case ENDP_1:
+	case ENDP_9:
 		return &R32_UEP1_TX_DMA;
 		break;
 	case ENDP_2:
+	case ENDP_10:
 		return &R32_UEP2_TX_DMA;
 		break;
 	case ENDP_3:
+	case ENDP_11:
 		return &R32_UEP3_TX_DMA;
 		break;
 	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
 		return &R32_UEP4_TX_DMA;
 		break;
 	case ENDP_5:
+	case ENDP_13:
 		return &R32_UEP5_TX_DMA;
 		break;
 	case ENDP_6:
+	case ENDP_14:
 		return &R32_UEP6_TX_DMA;
 		break;
 	case ENDP_7:
+	case ENDP_15:
 		return &R32_UEP7_TX_DMA;
 		break;
 	default:
@@ -196,24 +220,32 @@ usb2_get_rx_endpoint_addr_reg(uint8_t endp_num)
 		return &R32_UEP0_RT_DMA;
 		break;
 	case ENDP_1:
+	case ENDP_9:
 		return &R32_UEP1_RX_DMA;
 		break;
 	case ENDP_2:
+	case ENDP_10:
 		return &R32_UEP2_RX_DMA;
 		break;
 	case ENDP_3:
+	case ENDP_11:
 		return &R32_UEP3_RX_DMA;
 		break;
 	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
 		return &R32_UEP4_RX_DMA;
 		break;
 	case ENDP_5:
+	case ENDP_13:
 		return &R32_UEP5_RX_DMA;
 		break;
 	case ENDP_6:
+	case ENDP_14:
 		return &R32_UEP6_RX_DMA;
 		break;
 	case ENDP_7:
+	case ENDP_15:
 		return &R32_UEP7_RX_DMA;
 		break;
 	default:
@@ -238,24 +270,32 @@ usb2_get_tx_endpoint_len_reg(uint8_t endp_num)
 		return &R16_UEP0_T_LEN;
 		break;
 	case ENDP_1:
+	case ENDP_9:
 		return &R16_UEP1_T_LEN;
 		break;
 	case ENDP_2:
+	case ENDP_10:
 		return &R16_UEP2_T_LEN;
 		break;
 	case ENDP_3:
+	case ENDP_11:
 		return &R16_UEP3_T_LEN;
 		break;
 	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
 		return &R16_UEP4_T_LEN;
 		break;
 	case ENDP_5:
+	case ENDP_13:
 		return &R16_UEP5_T_LEN;
 		break;
 	case ENDP_6:
+	case ENDP_14:
 		return &R16_UEP6_T_LEN;
 		break;
 	case ENDP_7:
+	case ENDP_15:
 		return &R16_UEP7_T_LEN;
 		break;
 	default:

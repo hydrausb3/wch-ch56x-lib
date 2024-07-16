@@ -44,6 +44,11 @@ void _default_nak_callback(uint8_t ep_num) {}
  */
 usb_device_t usb_device_0 = {
 	.speed = USB2_HIGHSPEED,
+	.endpoint_mask = 0,
+	.current_config = 0,
+	.current_interface = 0,
+	.addr = 0,
+	.state = DETACHED,
 	.endpoints = {
 		.endp0_user_handled_control_request =
 			_default_endp0_user_handled_control_request,
@@ -56,8 +61,24 @@ usb_device_t usb_device_0 = {
 						 _default_endp_tx_complete,
 						 _default_endp_tx_complete,
 						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
 						 _default_endp_tx_complete },
 		.rx_callback = { _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
@@ -70,6 +91,11 @@ usb_device_t usb_device_0 = {
 
 usb_device_t usb_device_1 = {
 	.speed = USB2_HIGHSPEED,
+	.endpoint_mask = 0,
+	.current_config = 0,
+	.current_interface = 0,
+	.addr = 0,
+	.state = DETACHED,
 	.endpoints = {
 		.endp0_user_handled_control_request =
 			_default_endp0_user_handled_control_request,
@@ -82,8 +108,24 @@ usb_device_t usb_device_1 = {
 						 _default_endp_tx_complete,
 						 _default_endp_tx_complete,
 						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
+						 _default_endp_tx_complete,
 						 _default_endp_tx_complete },
 		.rx_callback = { _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
+						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
 						 _default_endp_rx_callback,
@@ -154,8 +196,10 @@ void endp_rx_set_state(usb_device_t* usb_device, uint8_t endp_num, uint8_t state
 		if (usb_device->speed == USB30_SUPERSPEED)
 			; // not implemented
 		// usb3_endpoints_backend_handled.usb3_endp_rx_set_state_callback(endp_num);
-		else
+		else if (usb_device->speed == USB2_HIGHSPEED)
+		{
 			usb2_endpoints_backend_handled.usb2_endp_rx_set_state_callback(endp_num);
+		}
 	}
 }
 

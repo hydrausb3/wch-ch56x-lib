@@ -27,6 +27,7 @@ limitations under the License.
 #pragma GCC diagnostic pop
 
 #include "usb2_device_descriptors.h"
+#include "usb2_device_descriptors_alt_endpoints.h"
 #include "usb3_device_descriptors.h"
 #include "usb_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
@@ -39,25 +40,13 @@ limitations under the License.
 /* System clock / MCU frequency in Hz (lowest possible speed 15MHz) */
 #define FREQ_SYS (120000000)
 
-void endp1_tx_complete(TRANSACTION_STATUS status);
-void endp1_tx_complete(TRANSACTION_STATUS status) {}
-void endp2_tx_complete(TRANSACTION_STATUS status);
-void endp2_tx_complete(TRANSACTION_STATUS status) {}
-void endp3_tx_complete(TRANSACTION_STATUS status);
-void endp3_tx_complete(TRANSACTION_STATUS status) {}
-void endp4_tx_complete(TRANSACTION_STATUS status);
-void endp4_tx_complete(TRANSACTION_STATUS status) {}
-void endp5_tx_complete(TRANSACTION_STATUS status);
-void endp5_tx_complete(TRANSACTION_STATUS status) {}
-void endp6_tx_complete(TRANSACTION_STATUS status);
-void endp6_tx_complete(TRANSACTION_STATUS status) {}
-void endp7_tx_complete(TRANSACTION_STATUS status);
-void endp7_tx_complete(TRANSACTION_STATUS status) {}
+void endp_tx_complete(TRANSACTION_STATUS status);
+void endp_tx_complete(TRANSACTION_STATUS status) {}
 
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 1, endp1_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 1, usb_device_0.endpoints.rx[1].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp1 \r\n",
 				 size);
 	return 0x00;
@@ -66,7 +55,7 @@ uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp2_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp2_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 2, endp2_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 2, usb_device_0.endpoints.rx[2].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp2 \r\n",
 				 size);
 	return 0x00;
@@ -75,7 +64,7 @@ uint8_t endp2_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp3_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp3_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 3, endp3_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 3, usb_device_0.endpoints.rx[3].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp3 \r\n",
 				 size);
 	return 0x00;
@@ -84,7 +73,7 @@ uint8_t endp3_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp4_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp4_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 4, endp4_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 4, usb_device_0.endpoints.rx[4].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp4 \r\n",
 				 size);
 	return 0x00;
@@ -93,7 +82,7 @@ uint8_t endp4_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp5_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp5_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 5, endp5_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 5, usb_device_0.endpoints.rx[5].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp5 \r\n",
 				 size);
 	return 0x00;
@@ -102,7 +91,7 @@ uint8_t endp5_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp6_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp6_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 6, endp6_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 6, usb_device_0.endpoints.rx[6].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp6 \r\n",
 				 size);
 	return 0x00;
@@ -111,8 +100,80 @@ uint8_t endp6_rx_callback(uint8_t* const ptr, uint16_t size)
 uint8_t endp7_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp7_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	endp_tx_set_new_buffer(&usb_device_0, 7, endp7_rx_buffer, size); // loop-back
+	endp_tx_set_new_buffer(&usb_device_0, 7, usb_device_0.endpoints.rx[7].buffer, size); // loop-back
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp7 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp8_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp8_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 8, usb_device_0.endpoints.rx[8].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp8 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp9_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp9_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 9, usb_device_0.endpoints.rx[9].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp9 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp10_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp10_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 10, usb_device_0.endpoints.rx[10].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp11 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp11_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp11_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 11, usb_device_0.endpoints.rx[11].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp12 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp12_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp12_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 12, usb_device_0.endpoints.rx[12].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp12 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp13_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp13_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 13, usb_device_0.endpoints.rx[13].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp13 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp14_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp14_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 14, usb_device_0.endpoints.rx[14].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp14 \r\n",
+				 size);
+	return 0x00;
+}
+
+uint8_t endp15_rx_callback(uint8_t* const ptr, uint16_t size);
+uint8_t endp15_rx_callback(uint8_t* const ptr, uint16_t size)
+{
+	endp_tx_set_new_buffer(&usb_device_0, 15, usb_device_0.endpoints.rx[15].buffer, size); // loop-back
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "Received something of size %d on endp15 \r\n",
 				 size);
 	return 0x00;
 }
@@ -157,13 +218,20 @@ int main()
 
 	usb_device_0.endpoints.endp0_user_handled_control_request = endp0_user_handled_control_request;
 	usb_device_0.endpoints.endp0_passthrough_setup_callback = endp0_passthrough_setup_callback;
-	usb_device_0.endpoints.tx_complete[1] = endp1_tx_complete;
-	usb_device_0.endpoints.tx_complete[2] = endp2_tx_complete;
-	usb_device_0.endpoints.tx_complete[3] = endp3_tx_complete;
-	usb_device_0.endpoints.tx_complete[4] = endp4_tx_complete;
-	usb_device_0.endpoints.tx_complete[5] = endp5_tx_complete;
-	usb_device_0.endpoints.tx_complete[6] = endp6_tx_complete;
-	usb_device_0.endpoints.tx_complete[7] = endp7_tx_complete;
+	usb_device_0.endpoints.tx_complete[1] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[2] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[3] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[4] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[5] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[6] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[8] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[9] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[10] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[11] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[12] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[13] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[14] = endp_tx_complete;
+	usb_device_0.endpoints.tx_complete[15] = endp_tx_complete;
 	usb_device_0.endpoints.rx_callback[1] = endp1_rx_callback;
 	usb_device_0.endpoints.rx_callback[2] = endp2_rx_callback;
 	usb_device_0.endpoints.rx_callback[3] = endp3_rx_callback;
@@ -171,37 +239,61 @@ int main()
 	usb_device_0.endpoints.rx_callback[5] = endp5_rx_callback;
 	usb_device_0.endpoints.rx_callback[6] = endp6_rx_callback;
 	usb_device_0.endpoints.rx_callback[7] = endp7_rx_callback;
+	usb_device_0.endpoints.rx_callback[8] = endp8_rx_callback;
+	usb_device_0.endpoints.rx_callback[9] = endp9_rx_callback;
+	usb_device_0.endpoints.rx_callback[10] = endp10_rx_callback;
+	usb_device_0.endpoints.rx_callback[11] = endp11_rx_callback;
+	usb_device_0.endpoints.rx_callback[13] = endp13_rx_callback;
+	usb_device_0.endpoints.rx_callback[14] = endp14_rx_callback;
+	usb_device_0.endpoints.rx_callback[15] = endp15_rx_callback;
 
 	usb2_user_handled.usb2_device_handle_bus_reset =
 		&usb2_device_handle_bus_reset;
 
 	// Finish initializing the descriptor parameters
-	init_usb3_descriptors();
-	init_usb2_descriptors();
+
 	init_string_descriptors();
 
 	// Set the USB device parameters
-	usb_device_set_usb3_device_descriptor(&usb_device_0, &usb3_descriptors.usb_device_descr);
-	usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors.usb_device_descr);
-	usb_device_set_usb3_config_descriptors(&usb_device_0, usb3_device_configs);
-	usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs);
-	usb_device_set_bos_descriptor(&usb_device_0, &usb3_descriptors.capabilities.usb_bos_descr);
+
 	usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
-	usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_1_TX | ENDPOINT_2_RX |
-													ENDPOINT_2_TX | ENDPOINT_3_RX | ENDPOINT_3_TX |
-													ENDPOINT_4_RX | ENDPOINT_4_TX | ENDPOINT_5_RX |
-													ENDPOINT_5_TX | ENDPOINT_6_RX | ENDPOINT_6_TX |
-													ENDPOINT_7_RX | ENDPOINT_7_TX);
 
 	init_endpoints();
 
 	if (!bsp_ubtn())
 	{
+		init_usb3_descriptors();
+		usb_device_set_usb3_device_descriptor(&usb_device_0, &usb3_descriptors.usb_device_descr);
+		usb_device_set_usb3_config_descriptors(&usb_device_0, usb3_device_configs);
+		usb_device_set_bos_descriptor(&usb_device_0, &usb3_descriptors.capabilities.usb_bos_descr);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_1_TX | ENDPOINT_2_RX |
+														ENDPOINT_2_TX | ENDPOINT_3_RX | ENDPOINT_3_TX |
+														ENDPOINT_4_RX | ENDPOINT_4_TX | ENDPOINT_5_RX |
+														ENDPOINT_5_TX | ENDPOINT_6_RX | ENDPOINT_6_TX |
+														ENDPOINT_7_RX | ENDPOINT_7_TX);
 		usb_device_0.speed = USB30_SUPERSPEED;
 		usb30_device_init(false);
 	}
 	else
 	{
+		// // uncomment to test other supported endpoint numbers
+		// // NOTE : some endpoints numbers are incompatible and can't be used at the same time
+		// init_usb2_descriptors_alt_endpoints();
+		// usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors_alt_endpoints.usb_device_descr);
+		// usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs_alt_endpoints);
+		// usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_9_RX | ENDPOINT_9_TX | ENDPOINT_10_RX |
+		// 												ENDPOINT_10_TX | ENDPOINT_11_RX | ENDPOINT_11_TX |
+		// 												ENDPOINT_12_RX | ENDPOINT_12_TX | ENDPOINT_13_RX |
+		// 												ENDPOINT_13_TX | ENDPOINT_14_RX | ENDPOINT_14_TX |
+		// 												ENDPOINT_15_RX | ENDPOINT_15_TX);
+		init_usb2_descriptors();
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors.usb_device_descr);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_1_TX | ENDPOINT_2_RX |
+														ENDPOINT_2_TX | ENDPOINT_3_RX | ENDPOINT_3_TX |
+														ENDPOINT_4_RX | ENDPOINT_4_TX | ENDPOINT_5_RX |
+														ENDPOINT_5_TX | ENDPOINT_6_RX | ENDPOINT_6_TX |
+														ENDPOINT_7_RX | ENDPOINT_7_TX);
 		usb_device_0.speed = USB2_HIGHSPEED;
 		usb2_device_init();
 	}
