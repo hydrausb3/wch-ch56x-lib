@@ -196,8 +196,10 @@ void endp_rx_set_state(usb_device_t* usb_device, uint8_t endp_num, uint8_t state
 		if (usb_device->speed == USB30_SUPERSPEED)
 			; // not implemented
 		// usb3_endpoints_backend_handled.usb3_endp_rx_set_state_callback(endp_num);
-		else
+		else if (usb_device->speed == USB2_HIGHSPEED)
+		{
 			usb2_endpoints_backend_handled.usb2_endp_rx_set_state_callback(endp_num);
+		}
 	}
 }
 

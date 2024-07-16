@@ -36,16 +36,16 @@ usb_device_t* usb2_backend_current_device = &usb_device_0;
 static volatile puint8_t desc_head = NULL;
 static volatile uint16_t endp0_current_transfer_size = 0;
 static volatile uint16_t endp0_remaining_bytes = 0;
-static volatile uint16_t endp_tx_remaining_bytes[16];
-static volatile USB_SETUP usb_setup_req;
-
+volatile uint16_t endp_tx_remaining_bytes[16];
+volatile USB_SETUP usb_setup_req;
 static volatile bool ep0_passthrough_enabled = false;
+volatile uint16_t usb_setup_req_data_size;
 
 void _default_usb2_device_handle_bus_reset(void);
 void _default_usb2_device_handle_bus_reset(void) {}
 
 usb2_user_handled_t usb2_user_handled = {
-	.usb2_device_handle_bus_reset = _default_usb2_device_handle_bus_reset
+	.usb2_device_handle_bus_reset = _default_usb2_device_handle_bus_reset,
 };
 
 usb2_endpoints_backend_handled_t usb2_endpoints_backend_handled = {
@@ -78,7 +78,7 @@ void usb2_device_init()
 	}
 	R8_USB_CTRL |= RB_DEV_PU_EN | RB_USB_INT_BUSY | RB_USB_DMA_EN;
 	R8_USB_INT_EN = RB_USB_IE_SETUPACT | RB_USB_IE_TRANS | RB_USB_IE_SUSPEND |
-					RB_USB_IE_BUSRST;
+					RB_USB_IE_BUSRST | RB_USB_IE_FIFOOV;
 
 	// init device's state
 	usb2_backend_current_device->addr = 0;
@@ -94,21 +94,9 @@ void usb2_device_deinit(void)
 	R8_USB_CTRL = RB_USB_CLR_ALL | RB_USB_RESET_SIE;
 }
 
-void usb2_setup_endpoints(void)
+void usb2_setup_endpoints_in_mask(uint32_t mask)
 {
-	R32_UEP0_RT_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[0].buffer;
-	R16_UEP0_MAX_LEN = 64; // configure EP0 max buffer length
-	R16_UEP0_T_LEN = 0;
-	R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
-	R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
-
-	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
-	// {
-	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
-	// 	return;
-	// }
-
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_TX)
+	if (mask & ENDPOINT_1_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
 		R32_UEP1_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[1].buffer;
@@ -117,7 +105,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.tx[1].state = ENDP_STATE_NAK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_9_TX)
+	if (mask & ENDPOINT_9_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
 		R32_UEP1_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[9].buffer;
@@ -126,7 +114,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.tx[9].state = ENDP_STATE_NAK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_1_RX)
+	if (mask & ENDPOINT_1_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[1].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -140,7 +128,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[1].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_9_RX)
+	if (mask & ENDPOINT_9_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[9].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -154,7 +142,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[9].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_2_TX)
+	if (mask & ENDPOINT_2_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
 		R32_UEP2_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[2].buffer;
@@ -163,7 +151,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.tx[2].state = ENDP_STATE_NAK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_10_TX)
+	if (mask & ENDPOINT_10_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP2_TX_EN;
 		R32_UEP2_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[10].buffer;
@@ -172,7 +160,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.tx[10].state = ENDP_STATE_NAK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_2_RX)
+	if (mask & ENDPOINT_2_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[2].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -186,7 +174,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[2].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_10_RX)
+	if (mask & ENDPOINT_10_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[10].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -200,7 +188,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[10].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_3_TX)
+	if (mask & ENDPOINT_3_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
 		R32_UEP3_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[3].buffer;
@@ -208,7 +196,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[3].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_11_TX)
+	if (mask & ENDPOINT_11_TX)
 	{
 		R8_UEP2_3_MOD |= RB_UEP3_TX_EN;
 		R32_UEP3_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[11].buffer;
@@ -216,7 +204,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP3_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[11].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_3_RX)
+	if (mask & ENDPOINT_3_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[3].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -229,7 +217,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP3_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[3].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_11_RX)
+	if (mask & ENDPOINT_11_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[11].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -243,7 +231,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[11].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_4_TX)
+	if (mask & ENDPOINT_4_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
 		R32_UEP4_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[4].buffer;
@@ -251,7 +239,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[4].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_8_TX)
+	if (mask & ENDPOINT_8_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
 		R32_UEP4_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[8].buffer;
@@ -259,7 +247,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[8].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_12_TX)
+	if (mask & ENDPOINT_12_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP4_TX_EN;
 		R32_UEP4_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[12].buffer;
@@ -267,7 +255,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[12].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_4_RX)
+	if (mask & ENDPOINT_4_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[4].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -280,7 +268,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[4].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_8_RX)
+	if (mask & ENDPOINT_8_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[8].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -293,7 +281,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP4_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[8].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_12_RX)
+	if (mask & ENDPOINT_12_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[12].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -307,7 +295,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[12].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_5_TX)
+	if (mask & ENDPOINT_5_TX)
 	{
 		R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
 		R32_UEP5_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[5].buffer;
@@ -315,7 +303,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[5].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_13_TX)
+	if (mask & ENDPOINT_13_TX)
 	{
 		R8_UEP5_6_MOD |= RB_UEP5_TX_EN;
 		R32_UEP5_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[13].buffer;
@@ -323,7 +311,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP5_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[13].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_5_RX)
+	if (mask & ENDPOINT_5_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[5].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -336,7 +324,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP5_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[5].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_13_RX)
+	if (mask & ENDPOINT_13_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[13].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -350,7 +338,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[13].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_6_TX)
+	if (mask & ENDPOINT_6_TX)
 	{
 		R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
 		R32_UEP6_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[6].buffer;
@@ -358,7 +346,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[6].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_14_TX)
+	if (mask & ENDPOINT_14_TX)
 	{
 		R8_UEP5_6_MOD |= RB_UEP6_TX_EN;
 		R32_UEP6_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[14].buffer;
@@ -366,7 +354,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP6_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[14].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_6_RX)
+	if (mask & ENDPOINT_6_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[6].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -379,7 +367,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP6_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[6].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_14_RX)
+	if (mask & ENDPOINT_14_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[14].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -393,7 +381,7 @@ void usb2_setup_endpoints(void)
 		usb2_backend_current_device->endpoints.rx[14].state = ENDP_STATE_ACK;
 	}
 
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_7_TX)
+	if (mask & ENDPOINT_7_TX)
 	{
 		R8_UEP7_MOD |= RB_UEP7_TX_EN;
 		R32_UEP7_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[7].buffer;
@@ -401,7 +389,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[7].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_15_TX)
+	if (mask & ENDPOINT_15_TX)
 	{
 		R8_UEP7_MOD |= RB_UEP7_TX_EN;
 		R32_UEP7_TX_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.tx[15].buffer;
@@ -409,7 +397,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP7_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
 		usb2_backend_current_device->endpoints.tx[15].state = ENDP_STATE_NAK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_7_RX)
+	if (mask & ENDPOINT_7_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[7].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -422,7 +410,7 @@ void usb2_setup_endpoints(void)
 		R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[7].state = ENDP_STATE_ACK;
 	}
-	if (usb2_backend_current_device->endpoint_mask & ENDPOINT_15_RX)
+	if (mask & ENDPOINT_15_RX)
 	{
 		if (usb2_backend_current_device->endpoints.rx[15].max_packet_size > USB2_EP_MAX_PACKET_SIZE)
 		{
@@ -435,6 +423,22 @@ void usb2_setup_endpoints(void)
 		R8_UEP7_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 		usb2_backend_current_device->endpoints.rx[15].state = ENDP_STATE_ACK;
 	}
+}
+
+void usb2_setup_endpoints(void)
+{
+	R32_UEP0_RT_DMA = (uint32_t)(uint8_t*)usb2_backend_current_device->endpoints.rx[0].buffer;
+	R16_UEP0_MAX_LEN = 64; // configure EP0 max buffer length
+	R16_UEP0_T_LEN = 0;
+	R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+	R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+
+	usb2_setup_endpoints_in_mask(usb2_backend_current_device->endpoint_mask);
+	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
+	// {
+	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
+	// 	return;
+	// }
 
 	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
 	// {
@@ -796,43 +800,51 @@ usb2_in_transfer_handler(uint8_t endp_num)
 	vuint16_t* T_Len = usb2_get_tx_endpoint_len_reg(endp_num);
 	vuint16_t* tx_remaining_bytes = &endp_tx_remaining_bytes[endp_num];
 
-#ifdef DEBUG
-	if (endp == NULL || TX_CTRL == NULL || T_Len == NULL ||
-		tx_remaining_bytes == NULL)
-		return;
-#endif
-
 	if (*usb2_get_tx_endpoint_addr_reg(endp_num) != 0)
 	{
 		uint16_t len = *tx_remaining_bytes > endp->max_packet_size
 						   ? endp->max_packet_size
 						   : *tx_remaining_bytes;
+		usb_setup_req_data_size += len;
 		*tx_remaining_bytes -= len;
 
 		if (*tx_remaining_bytes == 0)
 		{
 			*T_Len = 0;
+			if (endp_num == 0 && !(usb_setup_req.bRequestType & USB_REQ_TYP_IN))
+			{
+				R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+				R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+			}
+			else if (endp_num == 0 && (usb_setup_req.bRequestType & USB_REQ_TYP_IN) && ((usb_setup_req_data_size >= usb_setup_req.wLength || (len < endp->max_packet_size))))
+			{
+				// prepare STATUS
+				R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+				R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
+			}
+			else
+			{
+				*TX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
+			}
+
+			*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
+			usb2_backend_current_device->endpoints.tx_complete[endp_num](Ack);
 			if (endp_num != 0)
 			{
 				*usb2_get_tx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
 			}
-			else
-			{
-				*usb2_get_rx_endpoint_addr_reg(0) = (uint32_t)usb2_backend_current_device->endpoints.rx[0].buffer;
-			}
-			*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
-			usb2_backend_current_device->endpoints.tx_complete[endp_num](Ack);
 		}
 		else
 		{
+			*usb2_get_tx_endpoint_addr_reg(endp_num) += len;
 			*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_ACK;
+			*TX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
 		}
 	}
 	else
 	{
 		*TX_CTRL = (*TX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
 	}
-	*TX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
 }
 
 /**
@@ -847,22 +859,38 @@ usb2_out_transfer_handler(uint8_t endp_num)
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.rx[endp_num];
 	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(endp_num);
 
-#ifdef DEBUG
-	if (endp == NULL || RX_CTRL == NULL)
-		return;
-#endif
-
 	if (endp->buffer != NULL)
 	{
+		if (endp_num == 0)
+		{
+			usb_setup_req_data_size += num_bytes_received;
+		}
+
 		endp->state = usb2_backend_current_device->endpoints.rx_callback[endp_num](endp->buffer, num_bytes_received);
 		*usb2_get_rx_endpoint_addr_reg(endp_num) = (uint32_t)endp->buffer;
-		*RX_CTRL = (*RX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
+
+		if (endp_num == 0 && (usb_setup_req.bRequestType & USB_REQ_TYP_IN))
+		{
+			// prepare SETUP
+			R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
+			R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+		}
+		else if (endp_num == 0 && !(usb_setup_req.bRequestType & USB_REQ_TYP_IN) && (usb_setup_req_data_size >= usb_setup_req.wLength))
+		{
+			// prepare STATUS
+			R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+			R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
+		}
+		else
+		{
+			*RX_CTRL = (*RX_CTRL & ~RB_UEP_RRES_MASK) | endp->state;
+			*RX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
+		}
 	}
 	else
 	{
-		*RX_CTRL = (*RX_CTRL & ~RB_UEP_TRES_MASK) | UEP_T_RES_NAK;
+		*RX_CTRL = (*RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_T_RES_NAK;
 	}
-	*RX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
 }
 
 void usb2_endp_rx_set_state_callback(uint8_t endp_num)
@@ -922,29 +950,26 @@ void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 
 __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 {
-	uint8_t usb_dev_endp = (R8_USB_INT_ST & RB_DEV_ENDP_MASK) & 0xf;
-	uint8_t usb_pid = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK) >> 4;
-
+	volatile uint8_t usb_dev_endp = (R8_USB_INT_ST & RB_DEV_ENDP_MASK) & 0xf;
+	volatile uint8_t usb_pid = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK) >> 4;
+	volatile uint8_t usb_event = R8_USB_INT_FG;
+	volatile bool togok = (R8_USB_INT_ST & RB_USB_ST_TOGOK) != 0;
 	LOG_IF(LOG_LEVEL_TRACE, LOG_ID_TRACE, "USBHS_IRQHandler-start\r\n");
-
-	if (!(R8_USB_INT_FG & RB_USB_IF_SETUOACT) && (R8_USB_INT_ST & RB_USB_ST_NAK))
+	if (!(usb_event & RB_USB_IF_SETUOACT) && (R8_USB_INT_ST & RB_USB_ST_NAK))
 	{
 		usb2_backend_current_device->endpoints.nak_callback(usb_dev_endp);
 		R8_USB_INT_FG = R8_USB_INT_FG;
 		return;
 	}
-
-	if (R8_USB_INT_FG & RB_USB_IF_SETUOACT && usb2_backend_current_device->state != POWERED)
+	else if (usb_event & RB_USB_IF_SETUOACT && usb2_backend_current_device->state != POWERED)
 	{
-		usb_setup_req = *(USB_SETUP*)usb2_backend_current_device->endpoints.rx[0].buffer;
-
+		volatile USB_ENDPOINT* endp0 = &usb2_backend_current_device->endpoints.rx[0];
+		usb_setup_req = *(USB_SETUP*)endp0->buffer;
+		usb_setup_req_data_size = 0;
 		if (ep0_passthrough_enabled)
 		{
-			volatile USB_ENDPOINT* endp0 = &usb2_backend_current_device->endpoints.rx[0];
-
 			endp0->state = usb2_backend_current_device->endpoints.endp0_passthrough_setup_callback(
 				usb2_backend_current_device->endpoints.rx[0].buffer, sizeof(USB_SETUP));
-			*usb2_get_rx_endpoint_addr_reg(0) = (uint32_t)endp0->buffer;
 			R8_UEP0_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
 			R8_UEP0_RX_CTRL = endp0->state | RB_UEP_T_TOG_1;
 		}
@@ -952,44 +977,38 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		{
 			usb2_ep0_setup_stage_handler();
 		}
-
-		R8_USB_INT_FG = RB_USB_IF_SETUOACT; // Clear interrupt flag
+		R8_USB_INT_FG = R8_USB_INT_FG; // Clear interrupt flag
 	}
-	else if ((R8_USB_INT_FG & RB_USB_IF_TRANSFER) &&
+	else if ((usb_event & RB_USB_IF_TRANSFER) &&
 			 usb2_backend_current_device->state != POWERED)
 	{
-		if (!(R8_USB_INT_ST & RB_USB_ST_TOGOK))
+		if (usb_pid == PID_IN)
 		{
-			LOG_IF_LEVEL(LOG_LEVEL_DEBUG, " TOG MATCH FAIL : ENDP %x pid %x \n", usb_dev_endp, usb_pid);
-			// what to do here ?
-			// R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
-			// return;
-		}
-
-		switch (usb_dev_endp)
-		{
-		case 0:
-			if (usb_pid == PID_IN)
+			if (usb_dev_endp != 0 || ep0_passthrough_enabled)
 			{
-				if (ep0_passthrough_enabled)
-				{
-					usb2_in_transfer_handler(usb_dev_endp);
-				}
-				else
-				{
-					usb2_ep0_in_handler();
-				}
+				usb2_in_transfer_handler(usb_dev_endp);
 			}
-			else if (usb_pid == PID_OUT)
+			else
 			{
-				if (ep0_passthrough_enabled)
+				usb2_ep0_in_handler();
+			}
+		}
+		else if (usb_pid == PID_OUT)
+		{
+			vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(usb_dev_endp);
+			if (!togok)
+			{
+				*RX_CTRL = (*RX_CTRL & ~RB_UEP_RRES_MASK) | usb2_backend_current_device->endpoints.rx[usb_dev_endp].state;
+				R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
+				return;
+			}
+
+			// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
+			// discard this packet, as even though data has been received it shouldn't be taken into account
+			if (!(*RX_CTRL & (UEP_R_RES_NAK | UEP_R_RES_STALL)))
+			{
+				if (usb_dev_endp != 0 || ep0_passthrough_enabled)
 				{
-					// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
-					// discard this packet, as even though data has been received it shouldn't be taken into account
-					if (R8_UEP0_RX_CTRL & (UEP_R_RES_NAK | UEP_R_RES_STALL))
-					{
-						break;
-					}
 					usb2_out_transfer_handler(usb_dev_endp);
 				}
 				else
@@ -997,32 +1016,22 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 					usb2_ep0_out_handler();
 				}
 			}
-			break;
-		default:
-			if (usb_pid == PID_IN)
+			else
 			{
-				usb2_in_transfer_handler(usb_dev_endp);
+				*RX_CTRL = (*RX_CTRL & ~RB_UEP_RRES_MASK) | usb2_backend_current_device->endpoints.rx[usb_dev_endp].state;
 			}
-			else if (usb_pid == PID_OUT)
-			{
-				// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
-				// discard this packet, as even though data has been received it shouldn't be taken into account
-				if (*usb2_get_rx_endpoint_ctrl_reg(usb_dev_endp) & (UEP_R_RES_NAK | UEP_R_RES_STALL))
-				{
-					break;
-				}
-				usb2_out_transfer_handler(usb_dev_endp);
-			}
-			break;
 		}
-
 		R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
 	}
-	else if (R8_USB_INT_FG & RB_USB_IF_SUSPEND) // wakeup event or bus suspend
+	else if (usb_event & RB_USB_IF_SUSPEND) // wakeup event or bus suspend
 	{
 		R8_USB_INT_FG = RB_USB_IF_SUSPEND;
 	}
-	else if (R8_USB_INT_FG & RB_USB_IF_BUSRST)
+	else if (usb_event & RB_USB_IF_FIFOOV)
+	{
+		LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "USB2 FIFO Overflow\r\n");
+	}
+	else if (usb_event & RB_USB_IF_BUSRST)
 	{
 		usb2_user_handled.usb2_device_handle_bus_reset();
 		usb2_set_device_address(0);
