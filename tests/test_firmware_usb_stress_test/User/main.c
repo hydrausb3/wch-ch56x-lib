@@ -26,7 +26,9 @@ limitations under the License.
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
-#include "usb2_device_descriptors.h"
+#include "usb2_fs_device_descriptors.h"
+#include "usb2_hs_device_descriptors.h"
+#include "usb2_ls_device_descriptors.h"
 #include "usb_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
 #include "wch-ch56x-lib/USBDevice/usb20.h"
@@ -72,7 +74,6 @@ void endp2_tx_complete(TRANSACTION_STATUS status)
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size)
 {
-	LOG("writing %d bytes %x %x %x %x \r\n", size, endp0_buffer[0], endp0_buffer[1], endp0_buffer[2], endp0_buffer[3]);
 	memcpy(last_out_buffer + out_total_sent, ptr, size);
 	out_total_sent += size;
 	last_out_total_sent = out_total_sent; //because no ZLP is sent for bulk OUT ... meaning we can't detect the end of the transfer
@@ -171,7 +172,7 @@ int main()
 	bsp_init(FREQ_SYS);
 
 	LOG_INIT(FREQ_SYS);
-	LOG("USB stress test azeaez\r\n");
+	LOG("USB stress test\r\n");
 
 	usb_device_0.endpoints.endp0_user_handled_control_request = endp0_user_handled_control_request;
 	usb_device_0.endpoints.tx_complete[2] = endp2_tx_complete;
@@ -181,21 +182,66 @@ int main()
 	usb2_user_handled.usb2_device_handle_bus_reset =
 		&usb2_device_handle_bus_reset;
 
-	// Finish initializing the descriptor parameters
-	init_usb2_descriptors();
-	init_string_descriptors();
+	if (bsp_ubtn())
+	{
+		usb_device_0.speed = USB2_FULLSPEED;
+	}
+	else
+	{
+		usb_device_0.speed = USB2_HIGHSPEED;
+	}
 
-	// Set the USB device parameters
-	usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_descriptors.usb_device_descr);
-	usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_device_configs);
-	usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
-	usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_2_TX);
+	if (usb_device_0.speed == USB2_LOWSPEED)
+	{
+		// Finish initializing the descriptor parameters
+		init_usb2_ls_descriptors();
+		init_string_descriptors();
 
-	init_endpoints();
+		// Set the USB device parameters
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_ls_descriptors.usb_device_descr);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_ls_device_configs);
+		usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_2_TX);
 
-	usb_device_0.speed = USB2_HIGHSPEED;
-	usb2_device_init();
-	usb2_enable_nak(true);
+		init_endpoints_ls();
+
+		usb2_device_init();
+		usb2_enable_nak(true);
+	}
+	else if (usb_device_0.speed == USB2_FULLSPEED)
+	{
+		// Finish initializing the descriptor parameters
+		init_usb2_fs_descriptors();
+		init_string_descriptors();
+
+		// Set the USB device parameters
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_fs_descriptors.usb_device_descr);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_fs_device_configs);
+		usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_2_TX);
+
+		init_endpoints_fs();
+
+		usb2_device_init();
+		usb2_enable_nak(true);
+	}
+	else if (usb_device_0.speed == USB2_HIGHSPEED)
+	{
+		// Finish initializing the descriptor parameters
+		init_usb2_hs_descriptors();
+		init_string_descriptors();
+
+		// Set the USB device parameters
+		usb_device_set_usb2_device_descriptor(&usb_device_0, &usb2_hs_descriptors.usb_device_descr);
+		usb_device_set_usb2_config_descriptors(&usb_device_0, usb2_hs_device_configs);
+		usb_device_set_string_descriptors(&usb_device_0, device_string_descriptors);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_2_TX);
+
+		init_endpoints_hs();
+
+		usb2_device_init();
+		usb2_enable_nak(true);
+	}
 
 	// Infinite loop USB2/USB3 managed with Interrupt
 	while (1)
