@@ -21,12 +21,12 @@ def check(byte_array, packet_size, reference_array):
     """
     Check the received buffers against what has been sent, to check for integrity
     """
-    for i in range(len(byte_array) // packet_size):
-        packet_in = byte_array[i * packet_size:i*packet_size + packet_size]
-        packet_ref = reference_array[i *
-                                     packet_size:i*packet_size + packet_size]
+    for j in range(len(byte_array) // packet_size):
+        packet_in = byte_array[j * packet_size:j*packet_size + packet_size]
+        packet_ref = reference_array[j *
+                                     packet_size:j*packet_size + packet_size]
         if packet_in != packet_ref:
-            print(f"Error at {i} ")
+            print(f"Error at {j} ")
             print(packet_in)
             print(packet_ref)
             return False
@@ -57,7 +57,12 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--device_num", default=0,
                         help="In case multiple devices are found, select the index of the device that will be used.", type=int)
+    parser.add_argument(
+        "--zlp", help="Only send packets of size 0", action='store_true')
     args = parser.parse_args()
+
+    if args.zlp:
+        BUFFER_SIZE = 0
 
     # find our device
     devs = usb.core.find(idVendor=0x16c0, idProduct=0x27d8, find_all=True)
@@ -109,9 +114,9 @@ if __name__ == "__main__":
     SUCCESS = True
 
     fails = []
-    for i in range(len(ep_in)):
+    for i, (current_ep_in, current_ep_out) in enumerate(zip(ep_in, ep_out)):
         TOTAL_TIME_NS = 0
-        print(f"EP {i+1}")
+        print(f"EP {current_ep_in.bEndpointAddress & 0x7f}")
         try:
             endp_max_packet_size = ENDP_BURST_SIZE * ep_out[i].wMaxPacketSize
             buffer_out = array.array(
@@ -122,13 +127,19 @@ if __name__ == "__main__":
             head = 0
             num_sent = 0
             total_to_send = len(buffer_out)
-            while head < total_to_send:
-                try:
-                    head = send_next_packet(
-                        head, ep_in[i], ep_out[i], endp_max_packet_size, buffer_in, buffer_out)
-                    sys.stdout.write(f"\r{100. * head/total_to_send} % sent")
-                except usb.core.USBTimeoutError:  # HydraUSB3 tends to timeout when handling USB3
-                    print("error timeout, retrying ! ")
+
+            if BUFFER_SIZE == 0:
+                send_next_packet(
+                    head, current_ep_in, current_ep_out, endp_max_packet_size, buffer_in, buffer_out)
+            else:
+                while head < total_to_send:
+                    try:
+                        head = send_next_packet(
+                            head, current_ep_in, current_ep_out, endp_max_packet_size, buffer_in, buffer_out)
+                        sys.stdout.write(
+                            f"\r{100. * head/total_to_send} % sent")
+                    except usb.core.USBTimeoutError:  # HydraUSB3 tends to timeout when handling USB3
+                        print("error timeout, retrying ! ")
 
             STOP = time.time_ns()
             sys.stdout.write("\r")
@@ -139,12 +150,12 @@ if __name__ == "__main__":
                     f"Success ! Transfer rate with only transfer {len(buffer_in) / ((TOTAL_TIME_NS) * 1e-9) * 1e-6} MB/s")
             else:
                 print("Error")
-                fails.append(i)
+                fails.append(current_ep_in.bEndpointAddress & 0x7f)
         except:
-            fails.append(i)
+            fails.append(current_ep_in.bEndpointAddress & 0x7f)
 
 print(
-    f"There have been {len(fails)} fails. Endpoints {[ep + 1 for ep in fails]} failed ")
+    f"There have been {len(fails)} fails. Endpoints {fails} failed ")
 
 if len(fails) == 0:
     print("Test successful ! ")
