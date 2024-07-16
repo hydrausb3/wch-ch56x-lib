@@ -87,6 +87,7 @@ Based on Facedancer's stress test.
 
 ### USB loopack
 NOTE : the above USB stress test should replace this loopback test in most cases.
+NOTE : `test_firmware_usb_loopback.bin` allows testing all 16 endpoint numbers in both directions (not simultaneously because of incompatibilities) by uncommenting the dedicated code in `main.c`.
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
 * Run : flash `test_firmware_usb_loopback.bin` or `test_firmware_usb_loopback_separate_usb_stacks.bin` to one board. Run `test_loopback.py` or `test_loopback_randomize_packetsize.py`.
@@ -95,7 +96,7 @@ NOTE : the above USB stress test should replace this loopback test in most cases
 
 Run `test_loopback_randomize_packetsize.py` to send packets with variable sizes, to check if the board can handle various packet sizes.
 
-`test_loopbackp.py --zlp` sends packets without data (ZLP, Zero-length packets) to test if the device can handle these properly.
+`test_loopback.py --zlp` sends packets without data (ZLP, Zero-length packets) to test if the device can handle these properly.
 
 The `test_firmware_usb_loopback_separate_usb_stacks.bin` firmware will create one USB3 device using the USB3 lines of the connector and one USB2 device using the USB2 lines of the connector. You can then run the scripts at the same time for both device.
 
