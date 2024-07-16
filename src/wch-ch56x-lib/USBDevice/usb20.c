@@ -35,11 +35,32 @@ usb_device_t* usb2_backend_current_device = &usb_device_0;
 static volatile puint8_t desc_head = NULL;
 static volatile uint16_t endp0_current_transfer_size = 0;
 static volatile uint16_t endp0_remaining_bytes = 0;
+static volatile bool ep0_passthrough_enabled = false;
 volatile uint16_t endp_tx_remaining_bytes[16];
 volatile USB_SETUP usb_setup_req;
-static volatile bool ep0_passthrough_enabled = false;
 volatile uint16_t usb_setup_req_data_size;
 uint16_t usb2_endp0_max_packet_size = 0;
+
+static uint32_t usb2_incompatibles_endpoints[18] = {
+	ENDPOINT_1_TX | ENDPOINT_9_TX,
+	ENDPOINT_2_TX | ENDPOINT_10_TX,
+	ENDPOINT_3_TX | ENDPOINT_11_TX,
+	ENDPOINT_4_TX | ENDPOINT_12_TX,
+	ENDPOINT_5_TX | ENDPOINT_13_TX,
+	ENDPOINT_6_TX | ENDPOINT_14_TX,
+	ENDPOINT_7_TX | ENDPOINT_15_TX,
+	ENDPOINT_1_RX | ENDPOINT_9_RX,
+	ENDPOINT_2_RX | ENDPOINT_10_RX,
+	ENDPOINT_3_RX | ENDPOINT_11_RX,
+	ENDPOINT_4_RX | ENDPOINT_12_RX,
+	ENDPOINT_5_RX | ENDPOINT_13_RX,
+	ENDPOINT_6_RX | ENDPOINT_14_RX,
+	ENDPOINT_7_RX | ENDPOINT_15_RX,
+	ENDPOINT_8_RX | ENDPOINT_4_RX,
+	ENDPOINT_8_TX | ENDPOINT_4_TX,
+	ENDPOINT_8_RX | ENDPOINT_12_RX,
+	ENDPOINT_8_TX | ENDPOINT_12_TX,
+};
 
 void _default_usb2_device_handle_bus_reset(void);
 void _default_usb2_device_handle_bus_reset(void) {}
@@ -97,6 +118,15 @@ void usb2_device_deinit(void)
 
 void usb2_setup_endpoints_in_mask(uint32_t mask)
 {
+	for (size_t i = 0; i < sizeof(usb2_incompatibles_endpoints) / sizeof(usb2_incompatibles_endpoints[0]); ++i)
+	{
+		if ((mask & usb2_incompatibles_endpoints[i]) == usb2_incompatibles_endpoints[i])
+		{
+			LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "Incompatible endpoints, mask %x \r\n", usb2_incompatibles_endpoints[i]);
+			return;
+		}
+	}
+
 	if (mask & ENDPOINT_1_TX)
 	{
 		R8_UEP4_1_MOD |= RB_UEP1_TX_EN;
@@ -435,16 +465,6 @@ void usb2_setup_endpoints(void)
 	R8_UEP0_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 
 	usb2_setup_endpoints_in_mask(usb2_backend_current_device->endpoint_mask);
-	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
-	// {
-	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints \r\n");
-	// 	return;
-	// }
-
-	// if (usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS))
-	// {
-	// 	LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB2, "Unsupported endpoints, mask %x \r\n", usb2_backend_current_device->endpoint_mask & (USB2_UNSUPPORTED_ENDPOINTS));
-	// }
 }
 
 void usb2_reset_endpoints(void) { usb2_setup_endpoints(); }
