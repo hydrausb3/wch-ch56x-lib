@@ -44,7 +44,7 @@ Below are the different test cases and how to test them:
 ### Unittests
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to one board, and read its UART.
+* Run : flash `test_firmware_unittests.bin` to one board, and read its UART.
 
 The firmware will simply execute a list of functions returning either `true` or `false`, to check if the test has passed.
 
@@ -55,21 +55,21 @@ Those "unittests" are a way to get some certainty about edge cases of some parts
 ### HSPI
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to both boards, the jumper is used to differentiate the boards. Run `test_hspi_serdes.py`.
+* Run : flash `test_firmware_hspi.bin` to both boards, the jumper is used to differentiate the boards. Run `test_hspi_serdes.py`.
 
 The test simply sends data from one board to the other using HSPI, then exports it to the host to check integrity.
 
 ### SerDes
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to both boards, the jumper is used to differentiate the boards. Run `test_hspi_serdes.py`.
+* Run : flash `test_firmware_serdes.bin` to both boards, the jumper is used to differentiate the boards. Run `test_hspi_serdes.py`.
 
 The test simply sends data from one board to the other using SerDes, then exports it to the host to check integrity.
 
 ### Loopback
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to both boards, the jumper is used to differentiate the boards. Run `test_loopback.py` or `test_loopback_randomize.py`.
+* Run : flash `test_firmware_loopback.bin` to both boards, the jumper is used to differentiate the boards. Run `test_loopback.py` or `test_loopback_randomize.py`.
 
 `test_loopback.py` will send data to the first board via USB, which will transmit it to the second board using HSPI, then receive it back with SerDes, and back to the host via USB. The script will then check for integrity.
 
@@ -77,14 +77,27 @@ Run `test_loopback_randomize.py` to send packets with variable sizes, to check i
 
 The goal here is to check that all parts of the data loop works, although it does not use HSPI as half-duplex and does not use the interrupt_queue.
 
+### USB stress
+* Compile : compile the tests with `-DBUILD_TESTS=1`
+* Run : flash `test_firmware_usb_stress_test.bin` to one board. Run `test_stress.py`.
+
+Sends packets of random size using bulk, control or interrupt (for low-speed) requests and checks if data has been correctly sent or received.
+
+Based on Facedancer's stress test.
+
 ### USB loopack
+NOTE : the above USB stress test should replace this loopback test in most cases.
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to one board. Run `test_loopback.py` or `test_loopback_randomize.py`.
+* Run : flash `test_firmware_usb_loopback.bin` or `test_firmware_usb_loopback_separate_usb_stacks.bin` to one board. Run `test_loopback.py`, `test_loopback_randomize_packetsize.py` or `test_loopback_zlp.py`.
 
 `test_loopback.py` will send data to the board via USB, which will send it back. The test will then check the integrity of the transmission. The test is repeated for all 7 IN/OUT endpoints pairs.
 
-Run `test_loopback_randomize.py` to send packets with variable sizes, to check if the board can handle various packet sizes.
+Run `test_loopback_randomize_packetsize.py` to send packets with variable sizes, to check if the board can handle various packet sizes.
+
+`test_loopback_zlp.py` sends packets without data (ZLP, Zero-length packets) to test if the device can handle these properly.
+
+The `test_firmware_usb_loopback_separate_usb_stacks.bin` firmware will create one USB3 device using the USB3 lines of the connector and one USB2 device using the USB2 lines of the connector. You can then run the scripts at the same time for both device.
 
 The goal is to test if the USB3 and USB2 peripherals are working correctly.
 
@@ -93,7 +106,7 @@ By default, the USB3 peripheral is active but you can switch to USB2 by maintain
 ### USB speedtest
 
 * Compile : compile the tests with `-DBUILD_TESTS=1`
-* Run : flash to one board. Run `test_speedtest.py` or `test_speedtest_one_by_one.py`.
+* Run : flash `test_firmware_usb_speedtest.bin` to one board. Run `test_speedtest.py` or `test_speedtest_one_by_one.py`.
 
 `test_speedtest.py` will first send data to the board in one go (one call to libusb), then read data from the board in one go (one call to libusb).
 
