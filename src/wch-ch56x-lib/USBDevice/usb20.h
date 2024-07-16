@@ -64,6 +64,7 @@ extern usb2_user_handled_t usb2_user_handled;
 extern volatile uint16_t endp_tx_remaining_bytes[16];
 extern volatile USB_SETUP current_req;
 extern volatile uint16_t current_req_size;
+extern uint16_t usb2_endp0_max_packet_size;
 
 /**
  * @fn     usb2_device_init

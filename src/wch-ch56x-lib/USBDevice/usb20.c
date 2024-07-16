@@ -26,7 +26,6 @@ limitations under the License.
 	  ENDPOINT_10_TX | ENDPOINT_10_RX | ENDPOINT_11_TX | ENDPOINT_11_RX | \
 	  ENDPOINT_12_TX | ENDPOINT_12_RX | ENDPOINT_13_TX | ENDPOINT_13_RX | \
 	  ENDPOINT_14_TX | ENDPOINT_14_RX | ENDPOINT_15_TX | ENDPOINT_15_RX))
-#define USB2_ENDP0_MAX_PACKET_SIZE ((uint8_t)(64))
 #define USB2_EP_MAX_PACKET_SIZE ((uint16_t)(1024))
 
 // the default device is a regular USB3 with the mandatory USB2 compatibility.
@@ -40,6 +39,7 @@ volatile uint16_t endp_tx_remaining_bytes[16];
 volatile USB_SETUP usb_setup_req;
 static volatile bool ep0_passthrough_enabled = false;
 volatile uint16_t usb_setup_req_data_size;
+uint16_t usb2_endp0_max_packet_size = 0;
 
 void _default_usb2_device_handle_bus_reset(void);
 void _default_usb2_device_handle_bus_reset(void) {}
@@ -83,6 +83,7 @@ void usb2_device_init()
 	// init device's state
 	usb2_backend_current_device->addr = 0;
 	usb2_backend_current_device->state = POWERED;
+	usb2_endp0_max_packet_size = usb2_backend_current_device->usb_descriptors.usb2_device_descr->bMaxPacketSize0;
 
 	usb2_setup_endpoints();
 }
@@ -478,9 +479,7 @@ usb2_ep0_set_configuration_callback(void)
 __attribute__((always_inline)) static inline uint16_t
 usb2_ep0_next_data_packet_size(void)
 {
-	return endp0_remaining_bytes >= USB2_ENDP0_MAX_PACKET_SIZE
-			   ? USB2_ENDP0_MAX_PACKET_SIZE
-			   : endp0_remaining_bytes;
+	return min(endp0_remaining_bytes, usb2_endp0_max_packet_size);
 }
 
 /**
@@ -686,7 +685,7 @@ __attribute__((always_inline)) static inline void usb2_ep0_in_handler(void)
 		{
 			// Do not forget ZLP in case we only send full-sized packets : the host knows when the transfer is finished
 			// either by receiving a short packet (why would the device send a short packet if it has more to send ?) or a ZLP (zero-length packet)
-			if ((endp0_current_transfer_size % USB2_ENDP0_MAX_PACKET_SIZE) == 0 && len != 0)
+			if ((endp0_current_transfer_size % usb2_endp0_max_packet_size) == 0 && len != 0)
 			{
 				R16_UEP0_T_LEN = 0;
 				R8_UEP0_TX_CTRL = (R8_UEP0_TX_CTRL & ~(uint8_t)RB_UEP_TRES_MASK) | (uint8_t)UEP_T_RES_ACK;
