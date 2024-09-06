@@ -17,9 +17,9 @@ limitations under the License.
 *******************************************************************************/
 
 #include "wch-ch56x-lib/logging/log_serdes.h"
-#include "CH56x_common.h"
 #include "wch-ch56x-lib/logging/nanoprintf_impl.h"
 #include "wch-ch56x-lib/SerDesDevice/serdes.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdarg.h>
 
 // Add option in pre-processor compiler option
@@ -116,7 +116,7 @@ void vlog_serdes(const char* fmt, va_list args)
 #endif
 #endif // ifndef CH56x_DEBUG_LOG_BASIC_TIMESTAMP
 
-	bsp_disable_interrupt(); // Enter Critical Section
+	BSP_ENTER_CRITICAL(); // Enter Critical Section
 #ifdef CH56x_DEBUG_LOG_BASIC_TIMESTAMP
 	print_size1 = npf_snprintf(serdes_buffer, sizeof(serdes_buffer), "0x%08X ",
 							   (uint32_t)(delta));
@@ -140,7 +140,7 @@ void vlog_serdes(const char* fmt, va_list args)
 		}
 		serdes_send((uint8_t*)serdes_buffer, print_size2, 0);
 	}
-	bsp_enable_interrupt(); // Exit Critical Section
+	BSP_EXIT_CRITICAL(); // Exit Critical Section
 }
 
 void log_serdes(const char* fmt, ...)

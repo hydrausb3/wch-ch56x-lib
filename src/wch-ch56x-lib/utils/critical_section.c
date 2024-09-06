@@ -1,6 +1,5 @@
 /********************************** (C) COPYRIGHT *******************************
-Copyright (c) 2023 Quarkslab
-
+Copyright (c) 2024 Quarkslab
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,10 +15,6 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/memory/fifo.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 
-void _default_hydra_fifo_disable_interrupt(bool disable);
-void _default_hydra_fifo_disable_interrupt(bool /*disable*/) {}
-
-void (*hydra_fifo_disable_interrupt)(bool) =
-	_default_hydra_fifo_disable_interrupt;
+size_t bsp_critical_nesting = 0;

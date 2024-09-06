@@ -23,6 +23,7 @@ limitations under the License.
 #include "wch-ch56x-lib/logging/logging.h"
 #include "wch-ch56x-lib/memory/fifo.h"
 #include "wch-ch56x-lib/memory/pool.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdint.h>
 
 __attribute__((aligned(16))) uint8_t* hspi_rx_buffer_0;
@@ -251,7 +252,7 @@ bool _hspi_send(uint8_t* data)
 	if (hspi_task_args == NULL)
 		return false;
 
-	bsp_disable_interrupt();
+	BSP_ENTER_CRITICAL();
 	if (R8_HSPI_TX_SC & RB_HSPI_TX_TOG)
 	{
 		R32_HSPI_TX_ADDR1 = (vuint32_t)hspi_task_args->args.buffer;
@@ -277,7 +278,7 @@ bool _hspi_send(uint8_t* data)
 		// tx1_addr[1], tx1_addr[2], tx1_addr[3], tx1_addr[4]);
 	}
 	hspi_transmission_finished = false;
-	bsp_enable_interrupt();
+	BSP_EXIT_CRITICAL();
 
 	HSPI_DMA_Tx();
 

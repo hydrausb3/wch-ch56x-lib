@@ -17,7 +17,9 @@ limitations under the License.
 *******************************************************************************/
 
 #include "wch-ch56x-lib/logging/log_printf.h"
+#include "wch-ch56x-lib/logging/logging_definitions.h"
 #include "wch-ch56x-lib/logging/nanoprintf_impl.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 
 // Add option in pre-processor compiler option
 // CH56x_DEBUG_LOG_BASIC_TIMESTAMP=1
@@ -113,7 +115,7 @@ void _vlog_printf(const char* fmt, va_list args)
 #endif
 #endif // ifndef CH56x_DEBUG_LOG_BASIC_TIMESTAMP
 
-	bsp_disable_interrupt(); // Enter Critical Section
+	BSP_ENTER_CRITICAL(); // Enter Critical Section
 #ifdef CH56x_DEBUG_LOG_BASIC_TIMESTAMP
 	print_size1 = npf_snprintf(log_printf_buff, sizeof(log_printf_buff),
 							   "0x%08X ", (uint32_t)(delta));
@@ -137,7 +139,7 @@ void _vlog_printf(const char* fmt, va_list args)
 		}
 		UART1_SendString((uint8_t*)log_printf_buff, print_size2);
 	}
-	bsp_enable_interrupt(); // Exit Critical Section
+	BSP_EXIT_CRITICAL(); // Exit Critical Section
 	bsp_uled_off();
 }
 

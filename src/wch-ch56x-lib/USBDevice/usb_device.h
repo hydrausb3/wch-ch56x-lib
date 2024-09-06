@@ -45,9 +45,12 @@ USB3.0/USB2.0 management in the back.
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
+
+#include "wch-ch56x-lib/logging/logging.h"
 #include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
 #include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
 #include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -136,14 +139,14 @@ void usb_device_set_endpoint_mask(usb_device_t* usb_device, uint32_t endpoint_ma
 __attribute__((always_inline)) inline static bool
 endp_tx_set_new_buffer(usb_device_t* usb_device, uint8_t endp_num, uint8_t* const ptr, uint16_t size)
 {
-	bsp_disable_interrupt();
 	volatile USB_ENDPOINT* ep = &usb_device->endpoints.tx[endp_num];
+	BSP_ENTER_CRITICAL();
+
 	if (size > ep->max_packet_size_with_burst || ptr == 0)
 	{
-		bsp_enable_interrupt();
+		BSP_EXIT_CRITICAL();
 		return false;
 	}
-
 	ep->buffer = ptr;
 
 	if (endp_num == 0)
@@ -152,12 +155,11 @@ endp_tx_set_new_buffer(usb_device_t* usb_device, uint8_t endp_num, uint8_t* cons
 		memcpy(usb_device->endpoints.rx[0].buffer, ptr, size);
 	}
 
-	bsp_enable_interrupt();
 	if (usb_device->speed == USB30_SUPERSPEED)
 		usb3_endpoints_backend_handled.usb3_endp_tx_ready(endp_num, size);
 	else
 		usb2_endpoints_backend_handled.usb2_endp_tx_ready(endp_num, size);
-
+	BSP_EXIT_CRITICAL();
 	return true;
 }
 

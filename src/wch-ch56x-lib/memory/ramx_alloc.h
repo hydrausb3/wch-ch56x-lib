@@ -23,6 +23,7 @@ limitations under the License.
 #include <stdint.h>
 
 #include "wch-ch56x-lib/logging/logging.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 
 /**
 You must pass the following defines to your compiler
@@ -33,6 +34,14 @@ You must pass the following defines to your compiler
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef RAMX_ALLOC_ENTER_CRITICAL
+#define RAMX_ALLOC_ENTER_CRITICAL() BSP_ENTER_CRITICAL()
+#endif
+
+#ifndef RAMX_ALLOC_EXIT_CRITICAL
+#define RAMX_ALLOC_EXIT_CRITICAL() BSP_EXIT_CRITICAL()
 #endif
 
 /* Taken from linux kernel */
@@ -83,13 +92,17 @@ __attribute__((always_inline)) static inline void* ramx_pool_alloc_blocks(uint8_
 {
 	uint32_t i, j;
 	uint8_t space_found;
+	void* ret = NULL;
 
+	RAMX_ALLOC_ENTER_CRITICAL();
 	if (num_blocks == 0)
 	{
+		RAMX_ALLOC_EXIT_CRITICAL();
 		return 0;
 	}
 	if (num_blocks > POOL_BLOCK_NUM)
 	{
+		RAMX_ALLOC_EXIT_CRITICAL();
 		return 0;
 	}
 
@@ -119,10 +132,13 @@ __attribute__((always_inline)) static inline void* ramx_pool_alloc_blocks(uint8_
 					ramx_pool.blocks_reference_counter[i + j] = 1;
 				}
 				ramx_pool.blocks_used += num_blocks;
-				return ramx_pool.pool + (ramx_pool.block_size * i);
+				ret = ramx_pool.pool + (ramx_pool.block_size * i);
+				RAMX_ALLOC_EXIT_CRITICAL();
+				return ret;
 			}
 		}
 	}
+	RAMX_ALLOC_EXIT_CRITICAL();
 	return 0;
 }
 
@@ -145,12 +161,13 @@ __attribute__((always_inline)) static inline void* ramx_pool_alloc_bytes(uint32_
  */
 __attribute__((always_inline)) static inline void ramx_take_ownership(void* ptr)
 {
-	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_take_ownership ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
-
 	uint8_t block_index, num_blocks, i;
+	RAMX_ALLOC_ENTER_CRITICAL();
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_take_ownership ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
 
 	if (ptr == 0)
 	{
+		RAMX_ALLOC_EXIT_CRITICAL();
 		return;
 	}
 
@@ -162,6 +179,7 @@ __attribute__((always_inline)) static inline void ramx_take_ownership(void* ptr)
 	{
 		ramx_pool.blocks_reference_counter[block_index + i] += 1;
 	}
+	RAMX_ALLOC_EXIT_CRITICAL();
 }
 
 /**
@@ -172,13 +190,15 @@ __attribute__((always_inline)) static inline void ramx_take_ownership(void* ptr)
  */
 __attribute__((always_inline)) static inline void ramx_pool_free(void* ptr)
 {
-	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_pool_free ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
-
 	uint8_t block_index, num_blocks, i;
 	uint8_t num_freed = 0;
 
+	RAMX_ALLOC_ENTER_CRITICAL();
+
+	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "ramx_pool_free ptr %x free %d used %d \r\n", ptr, ramx_pool_stats_free(), ramx_pool_stats_used());
 	if (ptr == 0)
 	{
+		RAMX_ALLOC_EXIT_CRITICAL();
 		return;
 	}
 
@@ -199,6 +219,7 @@ __attribute__((always_inline)) static inline void ramx_pool_free(void* ptr)
 		}
 	}
 	ramx_pool.blocks_used -= num_freed;
+	RAMX_ALLOC_EXIT_CRITICAL();
 }
 
 #ifdef __cplusplus

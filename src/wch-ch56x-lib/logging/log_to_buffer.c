@@ -17,8 +17,8 @@ limitations under the License.
 *******************************************************************************/
 
 #include "wch-ch56x-lib/logging/log_to_buffer.h"
-#include "CH56x_common.h"
 #include "wch-ch56x-lib/logging/nanoprintf_impl.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdarg.h>
 #include "lwrb/lwrb.h"
 
@@ -146,9 +146,9 @@ void vlog_to_buffer(const char* fmt, va_list args)
 	print_size2 += print_size1;
 	if (print_size2 > 0)
 	{
-		bsp_disable_interrupt();
+		BSP_ENTER_CRITICAL();
 		lwrb_write(&lwrb_buffer, temp_buffer, print_size2);
-		bsp_enable_interrupt();
+		BSP_EXIT_CRITICAL();
 	}
 }
 
@@ -180,7 +180,7 @@ void log_to_buffer_dump_to_uart(void)
 
 void _write_to_buffer(char* buffer, size_t size)
 {
-	bsp_disable_interrupt();
+	BSP_ENTER_CRITICAL();
 	lwrb_write(&lwrb_buffer, buffer, size);
-	bsp_enable_interrupt();
+	BSP_EXIT_CRITICAL();
 }

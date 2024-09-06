@@ -35,7 +35,7 @@ static pool_t ram_pool;
 void pool_init(void)
 {
 	uint32_t i;
-
+	RAM_ALLOC_ENTER_CRITICAL();
 	ram_pool.pool_size = POOL_BLOCK_NUM;
 	ram_pool.block_size = POOL_BLOCK_SIZE;
 	ram_pool.blocks_used = 0;
@@ -45,6 +45,7 @@ void pool_init(void)
 	{
 		ram_pool.blocks[i] = 0;
 	}
+	RAM_ALLOC_EXIT_CRITICAL();
 }
 
 /**
@@ -61,13 +62,17 @@ void* pool_alloc_blocks(uint8_t num_blocks)
 {
 	uint32_t i, j;
 	uint8_t space_found;
+	void* ret = NULL;
 
+	RAM_ALLOC_ENTER_CRITICAL();
 	if (num_blocks == 0)
 	{
+		RAM_ALLOC_EXIT_CRITICAL();
 		return 0;
 	}
 	if (num_blocks > POOL_BLOCK_NUM)
 	{
+		RAM_ALLOC_EXIT_CRITICAL();
 		return 0;
 	}
 
@@ -96,10 +101,13 @@ void* pool_alloc_blocks(uint8_t num_blocks)
 					ram_pool.blocks[i + j] = num_blocks;
 				}
 				ram_pool.blocks_used += num_blocks;
-				return ram_pool.pool + (ram_pool.block_size * i);
+				ret = ram_pool.pool + (ram_pool.block_size * i);
+				RAM_ALLOC_EXIT_CRITICAL();
+				return ret;
 			}
 		}
 	}
+	RAM_ALLOC_EXIT_CRITICAL();
 	return 0;
 }
 
@@ -131,8 +139,10 @@ void pool_free(void* ptr)
 {
 	uint8_t block_index, num_blocks, i;
 
+	RAM_ALLOC_ENTER_CRITICAL();
 	if (ptr == 0)
 	{
+		RAM_ALLOC_EXIT_CRITICAL();
 		return;
 	}
 
@@ -144,6 +154,7 @@ void pool_free(void* ptr)
 		ram_pool.blocks[block_index + i] = 0;
 	}
 	ram_pool.blocks_used -= num_blocks;
+	RAM_ALLOC_EXIT_CRITICAL();
 }
 
 uint8_t pool_stats_free() { return ram_pool.pool_size - ram_pool.blocks_used; }
