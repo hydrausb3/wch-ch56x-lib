@@ -187,6 +187,25 @@ void init_string_descriptors(void)
 		&usb_string_descriptors.product_string_descriptor;
 }
 
+void init_endpoints_ss(void);
+void init_endpoints_ss(void)
+{
+	usb_device_0.endpoints.rx[0].buffer = endp0_buffer;
+	usb_device_0.endpoints.rx[0].max_packet_size = 512;
+	usb_device_0.endpoints.rx[0].max_burst = 1;
+	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = 512;
+
+	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
+	usb_device_0.endpoints.rx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.rx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_OUT_BURST_LEVEL;
+
+	usb_device_0.endpoints.tx[2].buffer = NULL;
+	usb_device_0.endpoints.tx[2].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[2].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_OUT_BURST_LEVEL;
+}
+
 void init_endpoints_hs(void);
 void init_endpoints_hs(void)
 {

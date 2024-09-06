@@ -29,9 +29,11 @@ limitations under the License.
 #include "usb2_fs_device_descriptors.h"
 #include "usb2_hs_device_descriptors.h"
 #include "usb2_ls_device_descriptors.h"
+#include "usb3_ss_device_descriptors.h"
 #include "usb_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
 #include "wch-ch56x-lib/USBDevice/usb20.h"
+#include "wch-ch56x-lib/USBDevice/usb30.h"
 #include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
 #include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
 
@@ -241,6 +243,23 @@ int main()
 
 		usb2_device_init();
 		usb2_enable_nak(true);
+	}
+	else if (usb_device_0.speed == USB30_SUPERSPEED)
+	{
+		/*
+		IMPORTANT NOTE : won't work. This firmware detects IN requests by detecting NAK.
+		WCH does not provide documentation for the USB3 controller and examples do not use NAKs (in USB2 as well, but USB3 has not documentation).
+		*/
+		// Finish initializing the descriptor parameters
+		init_usb3_ss_descriptors();
+		init_string_descriptors();
+
+		usb_device_set_usb3_device_descriptor(&usb_device_0, &usb3_descriptors.usb_device_descr);
+		usb_device_set_usb3_config_descriptors(&usb_device_0, usb3_device_configs);
+		usb_device_set_bos_descriptor(&usb_device_0, &usb3_descriptors.capabilities.usb_bos_descr);
+		usb_device_set_endpoint_mask(&usb_device_0, ENDPOINT_1_RX | ENDPOINT_2_TX);
+		init_endpoints_ss();
+		usb30_device_init(false);
 	}
 
 	// Infinite loop USB2/USB3 managed with Interrupt
