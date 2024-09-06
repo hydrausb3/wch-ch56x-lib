@@ -19,6 +19,7 @@ limitations under the License.
 #ifndef _ALLOC_H_
 #define _ALLOC_H_
 
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdint.h>
 
 /**
@@ -30,6 +31,14 @@ You must pass the following defines to your compiler
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#ifndef RAM_ALLOC_ENTER_CRITICAL
+#define RAM_ALLOC_ENTER_CRITICAL() BSP_ENTER_CRITICAL()
+#endif
+
+#ifndef RAM_ALLOC_EXIT_CRITICAL
+#define RAM_ALLOC_EXIT_CRITICAL() BSP_EXIT_CRITICAL()
 #endif
 
 typedef struct pool

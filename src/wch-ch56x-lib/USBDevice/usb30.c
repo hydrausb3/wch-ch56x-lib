@@ -552,7 +552,7 @@ usb30_ep_in_handler(uint8_t endp_num)
 		}
 	}
 
-	if (nump == 0 && *usb30_get_tx_endpoint_remaining_length(endp_num) == 0)
+	if (*usb30_get_tx_endpoint_remaining_length(endp_num) == 0)
 	{
 		LOG_IF(LOG_LEVEL_DEBUG, LOG_ID_USB3,
 			   "Finished IN transfer on ep %d, remaining length %d\r\n", endp_num,

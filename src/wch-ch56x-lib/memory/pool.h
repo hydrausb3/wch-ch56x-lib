@@ -30,6 +30,7 @@ limitations under the License.
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 
+#include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -74,18 +75,18 @@ typedef struct hydra_pool_t
 __attribute__((always_inline)) static inline void*
 hydra_pool_get(hydra_pool_t* pool)
 {
-	bsp_disable_interrupt();
+	BSP_ENTER_CRITICAL();
 	for (uint16_t i = 0; i < pool->size; ++i)
 	{
 		if (!pool->pool_manager[i])
 		{
 			pool->pool_manager[i] = true;
-			bsp_enable_interrupt();
+			BSP_EXIT_CRITICAL();
 			return (void*)(pool->pool_members + i * pool->type_size);
 		}
 	}
 	LOG_IF_LEVEL(LOG_LEVEL_CRITICAL, "Pool %x is full\r\n", pool);
-	bsp_enable_interrupt();
+	BSP_EXIT_CRITICAL();
 	return NULL;
 }
 
@@ -98,14 +99,14 @@ __attribute__((always_inline)) static inline void
 hydra_pool_free(hydra_pool_t* pool, void* ptr)
 {
 	uint16_t i = ((uint8_t*)(ptr)-pool->pool_members) / pool->type_size;
-	bsp_disable_interrupt();
+	BSP_ENTER_CRITICAL();
 	if (i >= pool->size || !pool->pool_manager[i])
 	{
-		bsp_enable_interrupt();
+		BSP_EXIT_CRITICAL();
 		return;
 	}
 	pool->pool_manager[i] = false;
-	bsp_enable_interrupt();
+	BSP_EXIT_CRITICAL();
 }
 
 /**
@@ -115,13 +116,13 @@ hydra_pool_free(hydra_pool_t* pool, void* ptr)
 __attribute__((always_inline)) static inline void
 hydra_pool_clean(hydra_pool_t* pool)
 {
-	bsp_disable_interrupt();
+	BSP_ENTER_CRITICAL();
 	for (uint16_t i = 0; i < pool->size; ++i)
 	{
 		pool->pool_manager[i] = false;
 	}
 	memset(pool->pool_members, 0, pool->size * pool->type_size);
-	bsp_enable_interrupt();
+	BSP_EXIT_CRITICAL();
 }
 
 #ifdef __cplusplus

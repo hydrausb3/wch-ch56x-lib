@@ -25,6 +25,7 @@ limitations under the License.
 #include <string.h>
 
 #include "wch-ch56x-lib/logging/logging.h"
+#include "wch-ch56x-lib/utils/critical_section.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -90,11 +91,13 @@ typedef struct hydra_fifo_t
 						   .rd_idx = 0,                  \
 						   .wr_idx = 0 }
 
-/**
- * @brief Set this pointer to disable/enable interrupts. Not necessary with
- * single-producer/single-consumer.
- */
-extern void (*hydra_fifo_disable_interrupt)(bool);
+#ifndef HYDRA_FIFO_ENTER_CRITICAL
+#define HYDRA_FIFO_ENTER_CRITICAL() BSP_ENTER_CRITICAL()
+#endif
+
+#ifndef HYDRA_FIFO_EXIT_CRITICAL
+#define HYDRA_FIFO_EXIT_CRITICAL() BSP_EXIT_CRITICAL()
+#endif
 
 #define ABS(x) x < 0 ? -x : x
 #define MIN(x, y) x < y ? x : y
@@ -262,14 +265,14 @@ _fifo_advance_write(hydra_fifo_t* fifo, uint16_t wr_idx, uint16_t offset)
 __attribute__((always_inline)) static inline uint16_t
 fifo_read(hydra_fifo_t* fifo, void* buffer)
 {
-	hydra_fifo_disable_interrupt(true);
+	HYDRA_FIFO_ENTER_CRITICAL();
 	uint16_t rd_idx = fifo->rd_idx;
 	uint16_t wr_idx = fifo->wr_idx;
 	uint16_t count_read =
 		_fifo_read_n(fifo, buffer, _fifo_get_count(rd_idx, wr_idx, fifo->size),
 					 rd_idx, wr_idx);
 	_fifo_advance_read(fifo, rd_idx, count_read);
-	hydra_fifo_disable_interrupt(false);
+	HYDRA_FIFO_EXIT_CRITICAL();
 	return count_read;
 }
 
@@ -284,12 +287,12 @@ fifo_read(hydra_fifo_t* fifo, void* buffer)
 __attribute__((always_inline)) static inline uint16_t
 fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n)
 {
-	hydra_fifo_disable_interrupt(true);
+	HYDRA_FIFO_ENTER_CRITICAL();
 	uint16_t rd_idx = fifo->rd_idx;
 	uint16_t wr_idx = fifo->wr_idx;
 	uint16_t count_read = _fifo_read_n(fifo, buffer, n, rd_idx, wr_idx);
 	_fifo_advance_read(fifo, rd_idx, count_read);
-	hydra_fifo_disable_interrupt(false);
+	HYDRA_FIFO_EXIT_CRITICAL();
 	return count_read;
 }
 
@@ -305,11 +308,11 @@ fifo_read_n(hydra_fifo_t* fifo, void* buffer, uint16_t n)
 __attribute__((always_inline)) static inline uint16_t
 fifo_peek_n(hydra_fifo_t* fifo, void* buffer, uint16_t n)
 {
-	hydra_fifo_disable_interrupt(true);
+	HYDRA_FIFO_ENTER_CRITICAL();
 	uint16_t rd_idx = fifo->rd_idx;
 	uint16_t wr_idx = fifo->wr_idx;
 	uint16_t count_read = _fifo_read_n(fifo, buffer, n, rd_idx, wr_idx);
-	hydra_fifo_disable_interrupt(false);
+	HYDRA_FIFO_EXIT_CRITICAL();
 	return count_read;
 }
 
@@ -324,12 +327,12 @@ fifo_peek_n(hydra_fifo_t* fifo, void* buffer, uint16_t n)
 __attribute__((always_inline)) static inline uint16_t
 fifo_write(hydra_fifo_t* fifo, void* buffer, uint16_t n)
 {
-	hydra_fifo_disable_interrupt(true);
+	HYDRA_FIFO_ENTER_CRITICAL();
 	uint16_t rd_idx = fifo->rd_idx;
 	uint16_t wr_idx = fifo->wr_idx;
 	uint16_t count_written = _fifo_write_n(fifo, buffer, n, rd_idx, wr_idx);
 	_fifo_advance_write(fifo, wr_idx, count_written);
-	hydra_fifo_disable_interrupt(false);
+	HYDRA_FIFO_EXIT_CRITICAL();
 	return count_written;
 }
 
@@ -351,11 +354,11 @@ fifo_count(hydra_fifo_t* fifo)
 __attribute__((always_inline)) static inline void
 fifo_clean(hydra_fifo_t* fifo)
 {
-	hydra_fifo_disable_interrupt(true);
+	HYDRA_FIFO_ENTER_CRITICAL();
 	fifo->rd_idx = 0;
 	fifo->wr_idx = 0;
 	memset(fifo->buffer, 0, fifo->size * fifo->type_size);
-	hydra_fifo_disable_interrupt(false);
+	HYDRA_FIFO_EXIT_CRITICAL();
 }
 
 #ifdef __cplusplus
