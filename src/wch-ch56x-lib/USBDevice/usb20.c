@@ -872,9 +872,8 @@ usb2_in_transfer_handler(uint8_t endp_num)
  *is OUT and ep is 1.
  **/
 __attribute__((always_inline)) static inline void
-usb2_out_transfer_handler(uint8_t endp_num)
+usb2_out_transfer_handler(uint8_t endp_num, uint16_t num_bytes_received)
 {
-	vuint16_t num_bytes_received = R16_USB_RX_LEN; // this register seems to change during interrupts, save it
 	volatile USB_ENDPOINT* endp = &usb2_backend_current_device->endpoints.rx[endp_num];
 	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(endp_num);
 
@@ -969,6 +968,7 @@ void usb2_endp_tx_ready(uint8_t endp_num, uint16_t size)
 
 __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 {
+	vuint16_t num_bytes_received = R16_USB_RX_LEN;
 	volatile uint8_t usb_dev_endp = (R8_USB_INT_ST & RB_DEV_ENDP_MASK) & 0xf;
 	volatile uint8_t usb_pid = (R8_USB_INT_ST & RB_DEV_TOKEN_MASK) >> 4;
 	volatile uint8_t usb_event = R8_USB_INT_FG;
@@ -1028,7 +1028,7 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 			{
 				if (usb_dev_endp != 0 || ep0_passthrough_enabled)
 				{
-					usb2_out_transfer_handler(usb_dev_endp);
+					usb2_out_transfer_handler(usb_dev_endp, num_bytes_received);
 				}
 				else
 				{
