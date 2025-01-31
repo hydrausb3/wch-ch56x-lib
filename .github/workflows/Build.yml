@@ -59,7 +59,7 @@ jobs:
           cmake --install build/
 
       - name: Upload artifact ${{ matrix.PROJECT_NAME }}-fw-${{steps.id_version.outputs.app_version}}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: fw-${{steps.id_version.outputs.app_version}}
           path: |
@@ -100,7 +100,7 @@ jobs:
          make
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: native_${{ matrix.PROJECT_NAME }}-${{steps.id_version.outputs.app_version}}
         path: tests/native/${{ matrix.PROJECT_NAME }}/${{ matrix.PROJECT_NAME }}
