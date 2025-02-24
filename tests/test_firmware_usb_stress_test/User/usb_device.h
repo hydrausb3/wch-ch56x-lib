@@ -194,16 +194,19 @@ void init_endpoints_ss(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 512;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = 512;
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
 	usb_device_0.endpoints.rx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.rx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.rx[1].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[2].buffer = NULL;
 	usb_device_0.endpoints.tx[2].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[2].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_OUT_BURST_LEVEL;
+	usb_device_0.endpoints.tx[2].state = ENDP_STATE_NAK;
 }
 
 void init_endpoints_hs(void);
@@ -213,16 +216,19 @@ void init_endpoints_hs(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 64;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = 64;
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
 	usb_device_0.endpoints.rx[1].max_packet_size = 512;
 	usb_device_0.endpoints.rx[1].max_burst = 4;
 	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = 512;
+	usb_device_0.endpoints.rx[1].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[2].buffer = NULL;
 	usb_device_0.endpoints.tx[2].max_packet_size = 512;
 	usb_device_0.endpoints.tx[2].max_burst = 4;
 	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = 512;
+	usb_device_0.endpoints.tx[2].state = ENDP_STATE_NAK;
 }
 
 void init_endpoints_fs(void);
@@ -232,16 +238,19 @@ void init_endpoints_fs(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 64;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = 64;
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
 	usb_device_0.endpoints.rx[1].max_packet_size = 64;
 	usb_device_0.endpoints.rx[1].max_burst = 1;
 	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = 64;
+	usb_device_0.endpoints.rx[1].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[2].buffer = NULL;
 	usb_device_0.endpoints.tx[2].max_packet_size = 64;
 	usb_device_0.endpoints.tx[2].max_burst = 1;
 	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = 64;
+	usb_device_0.endpoints.tx[2].state = ENDP_STATE_NAK;
 }
 
 void init_endpoints_ls(void);
@@ -251,16 +260,19 @@ void init_endpoints_ls(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 8;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = 8;
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
 	usb_device_0.endpoints.rx[1].max_packet_size = 8;
 	usb_device_0.endpoints.rx[1].max_burst = 1;
 	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = 8;
+	usb_device_0.endpoints.rx[1].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[2].buffer = NULL;
 	usb_device_0.endpoints.tx[2].max_packet_size = 8;
 	usb_device_0.endpoints.tx[2].max_burst = 1;
 	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = 8;
+	usb_device_0.endpoints.tx[2].state = ENDP_STATE_NAK;
 }
 
 #endif

@@ -305,6 +305,55 @@ usb2_get_tx_endpoint_len_reg(uint8_t endp_num)
 	return NULL;
 }
 
+/**
+ * @brief Get RX control register address
+ * @param endp_num endpoint number
+ * @return
+ */
+__attribute__((always_inline)) static inline vuint8_t*
+usb2_get_mod_reg(uint8_t endp_num)
+{
+	switch (endp_num)
+	{
+	case ENDP_0:
+		return &R8_UEP0_RX_CTRL;
+		break;
+	case ENDP_1:
+	case ENDP_9:
+		return &R8_UEP1_RX_CTRL;
+		break;
+	case ENDP_2:
+	case ENDP_10:
+		return &R8_UEP2_RX_CTRL;
+		break;
+	case ENDP_3:
+	case ENDP_11:
+		return &R8_UEP3_RX_CTRL;
+		break;
+	case ENDP_4:
+	case ENDP_8:
+	case ENDP_12:
+		return &R8_UEP4_RX_CTRL;
+		break;
+	case ENDP_5:
+	case ENDP_13:
+		return &R8_UEP5_RX_CTRL;
+		break;
+	case ENDP_6:
+	case ENDP_14:
+		return &R8_UEP6_RX_CTRL;
+		break;
+	case ENDP_7:
+	case ENDP_15:
+		return &R8_UEP7_RX_CTRL;
+		break;
+	default:
+		return NULL;
+		break;
+	}
+	return NULL;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -131,11 +131,13 @@ void init_endpoints(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 512;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = sizeof(endp0_buffer);
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[1].buffer = NULL;
 	usb_device_0.endpoints.tx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[1].max_burst = 0;
 	usb_device_0.endpoints.tx[1].max_packet_size_with_burst = sizeof(endp1_tx_buffer);
+	usb_device_0.endpoints.tx[1].state = ENDP_STATE_NAK;
 }
 
 bool_t is_board1; /* Return true or false */

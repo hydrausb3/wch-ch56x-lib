@@ -34,36 +34,43 @@ bool test_usb_device(void)
 	usb_device_0.endpoints.tx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[1].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[1].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[2].buffer = NULL;
 	usb_device_0.endpoints.tx[2].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[2].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[2].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[2].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[3].buffer = NULL;
 	usb_device_0.endpoints.tx[3].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[3].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[3].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[3].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[4].buffer = NULL;
 	usb_device_0.endpoints.tx[4].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[4].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[4].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[4].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[5].buffer = NULL;
 	usb_device_0.endpoints.tx[5].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[5].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[5].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[5].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[6].buffer = NULL;
 	usb_device_0.endpoints.tx[6].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[6].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[6].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[6].state = ENDP_STATE_NAK;
 
 	usb_device_0.endpoints.tx[7].buffer = NULL;
 	usb_device_0.endpoints.tx[7].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[7].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[7].max_packet_size_with_burst = ENDP_1_15_MAX_PACKET_SIZE;
+	usb_device_0.endpoints.tx[7].state = ENDP_STATE_NAK;
 
 	bool success = true;
 
