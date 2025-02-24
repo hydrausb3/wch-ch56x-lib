@@ -898,12 +898,14 @@ usb2_out_transfer_handler(uint8_t endp_num, uint16_t num_bytes_received)
 			// prepare SETUP
 			_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_0;
 			_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_0;
+			*TX_CTRL = _TX_CTRL;
 		}
 		else if (endp_num == 0 && !(usb_setup_req.bRequestType & USB_REQ_TYP_IN) && (usb_setup_req_data_size >= usb_setup_req.wLength))
 		{
 			// prepare STATUS
 			_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
 			_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
+			*TX_CTRL = _TX_CTRL;
 		}
 		else
 		{
@@ -916,7 +918,6 @@ usb2_out_transfer_handler(uint8_t endp_num, uint16_t num_bytes_received)
 		_RX_CTRL = (_RX_CTRL & ~RB_UEP_RRES_MASK) | UEP_T_RES_NAK;
 	}
 	*RX_CTRL = _RX_CTRL;
-	*TX_CTRL = _TX_CTRL;
 }
 
 void usb2_endp_rx_set_state_callback(uint8_t endp_num)
