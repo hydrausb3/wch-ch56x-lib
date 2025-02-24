@@ -27,7 +27,7 @@ limitations under the License.
 #pragma GCC diagnostic pop
 
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/SerDesDevice/serdes.h"
+#include "wch-ch56x-lib/serdes/serdes.h"
 #include "wch-ch56x-lib/usb/usb20.h"
 #include "wch-ch56x-lib/usb/usb30.h"
 #include "wch-ch56x-lib/usb/usb_descriptors.h"

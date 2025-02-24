@@ -12,7 +12,7 @@ target_sources(wch-ch56x-lib INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/logging/nanoprintf_impl.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/ramx_alloc.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/SerDesDevice/serdes.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/serdes/serdes.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_device.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_endpoints.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb20.c
@@ -38,7 +38,7 @@ target_sources(wch-ch56x-lib-scheduled INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/logging/nanoprintf_impl.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/ramx_alloc.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/SerDesDevice/serdes.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/serdes/serdes.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_device.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_endpoints.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb20.c
