@@ -1,4 +1,4 @@
-project(test_firmware_usb_loopback LANGUAGES C)
+project(test_firmware_usb_loopback_delayed LANGUAGES C)
 set(CMAKE_EXECUTABLE_SUFFIX_C ".elf")
 
 add_executable(${PROJECT_NAME})

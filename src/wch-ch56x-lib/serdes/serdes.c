@@ -16,7 +16,7 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/SerDesDevice/serdes.h"
+#include "wch-ch56x-lib/serdes/serdes.h"
 #include "wch-ch56x-lib/logging/logging.h"
 
 volatile uint32_t SDS_RX_LEN0 = 0;

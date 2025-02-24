@@ -36,8 +36,8 @@ extern "C" {
 #pragma GCC diagnostic pop
 
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_types.h"
 
 // link CFG
 #define TERM_EN (1 << 1)

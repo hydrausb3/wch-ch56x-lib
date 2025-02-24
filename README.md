@@ -4,7 +4,7 @@ This library was built alongside [Hydradancer](https://github.com/HydraDancer/hy
 
 Reliable drivers were needed for this project and many features were missing from the WCH examples or untested.
 
-This library provides USB3, USB2, HSPI and SerDes drivers that have been tested using the benchmark/integrity tests in `tests/`. It is based on `wch-ch56x-bsp` but its goal is to provide a higher level library. As Hydradancer was using several peripherals at a time (USB3/HSPI, USB2/HSPI), an interrupt queue was implemented to avoid missing interrupts for use with `HSPIDeviceScheduled` along with a static memory pool. While the tests in this repository are simple enough to do the processing inside the interrupt handlers, Hydradancer was missing interrupts and deferring interrupts to user mode was required.
+This library provides USB3, USB2, HSPI and SerDes drivers that have been tested using the benchmark/integrity tests in `tests/`. It is based on `wch-ch56x-bsp` but its goal is to provide a higher level library. As Hydradancer was using several peripherals at a time (USB3/HSPI, USB2/HSPI), an interrupt queue was implemented to avoid missing interrupts for use with `hspi_scheduled` along with a static memory pool. While the tests in this repository are simple enough to do the processing inside the interrupt handlers, Hydradancer was missing interrupts and deferring interrupts to user mode was required.
 
 # Using this library in your project
 

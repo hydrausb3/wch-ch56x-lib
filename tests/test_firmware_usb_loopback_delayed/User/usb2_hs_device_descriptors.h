@@ -31,7 +31,7 @@ struct usb2_hs_descriptors
 		USB_CFG_DESCR usb_cfg_descr;
 		USB_ITF_DESCR usb_itf_descr;
 		USB_ENDP_DESCR usb_endp_descr_1;
-		USB_ENDP_DESCR usb_endp_descr_2_tx;
+		USB_ENDP_DESCR usb_endp_descr_1_tx;
 	} other_descr;
 } usb2_hs_descriptors;
 
@@ -48,8 +48,8 @@ void init_usb2_hs_descriptors(void)
 		.bMaxPacketSize0 = 64,
 		.bcdDevice = 0x0001,
 		.idVendor =
-			0x1209, // https://github.com/obdev/v-usb/blob/master/usbdrv/usb-ids-for-free.txt
-		.idProduct = 0x0001,
+			0x16c0, // https://github.com/obdev/v-usb/blob/master/usbdrv/usb-ids-for-free.txt
+		.idProduct = 0x27d8,
 		.iProduct = 0x01,
 		.iManufacturer = 0x00,
 		.iSerialNumber = 0x00,
@@ -89,10 +89,10 @@ void init_usb2_hs_descriptors(void)
 		.bInterval = 255 // max NAK rate
 	};
 
-	usb2_hs_descriptors.other_descr.usb_endp_descr_2_tx = (USB_ENDP_DESCR){
+	usb2_hs_descriptors.other_descr.usb_endp_descr_1_tx = (USB_ENDP_DESCR){
 		.bLength = 0x07,
 		.bDescriptorType = 0x05,
-		.bEndpointAddress = (ENDPOINT_DESCRIPTOR_ADDRESS_IN | 0x02) &
+		.bEndpointAddress = (ENDPOINT_DESCRIPTOR_ADDRESS_IN | 0x01) &
 							ENDPOINT_DESCRIPTOR_ADDRESS_MASK,
 		.bmAttributes = ENDPOINT_DESCRIPTOR_BULK_TRANSFER,
 		.wMaxPacketSizeL = 0x00,

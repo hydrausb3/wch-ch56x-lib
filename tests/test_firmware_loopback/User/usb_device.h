@@ -19,9 +19,9 @@ limitations under the License.
 #define USB_DEVICE_USER_H
 
 #include "definitions.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 uint8_t hydradancer_product_string_descriptor[] = {
 	'H',
@@ -191,16 +191,19 @@ void init_endpoints(void)
 	usb_device_0.endpoints.rx[0].max_packet_size = 512;
 	usb_device_0.endpoints.rx[0].max_burst = 1;
 	usb_device_0.endpoints.rx[0].max_packet_size_with_burst = sizeof(endp0_buffer);
+	usb_device_0.endpoints.rx[0].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.rx[1].buffer = endp1_rx_buffer;
 	usb_device_0.endpoints.rx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.rx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.rx[1].max_packet_size_with_burst = sizeof(endp1_rx_buffer);
+	usb_device_0.endpoints.rx[1].state = ENDP_STATE_ACK;
 
 	usb_device_0.endpoints.tx[1].buffer = NULL;
 	usb_device_0.endpoints.tx[1].max_packet_size = ENDP_1_15_MAX_PACKET_SIZE;
 	usb_device_0.endpoints.tx[1].max_burst = DEF_ENDP_OUT_BURST_LEVEL;
 	usb_device_0.endpoints.tx[1].max_packet_size_with_burst = sizeof(endp1_rx_buffer);
+	usb_device_0.endpoints.tx[1].state = ENDP_STATE_NAK;
 }
 
 #endif

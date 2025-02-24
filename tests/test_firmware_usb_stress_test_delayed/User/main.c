@@ -43,6 +43,7 @@ limitations under the License.
 
 #define MIN(a, b) (a <= b ? a : b)
 
+#define EP_OUT 1
 #define EP_IN 2
 
 volatile bool nak_received = false;
@@ -76,6 +77,7 @@ void endp2_tx_complete(TRANSACTION_STATUS status)
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size);
 uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size)
 {
+	LOG("endp1_rx_callback size %d data %x %x %x\r\n", size, ptr[0], ptr[1], ptr[2]);
 	memcpy(last_out_buffer + out_total_sent, ptr, size);
 	out_total_sent += size;
 	last_out_total_sent = out_total_sent; //because no ZLP is sent for bulk OUT ... meaning we can't detect the end of the transfer
@@ -83,7 +85,7 @@ uint8_t endp1_rx_callback(uint8_t* const ptr, uint16_t size)
 	{
 		out_total_sent = 0;
 	}
-	return 0x00;
+	return ENDP_STATE_NAK;
 }
 
 void nak_callback(uint8_t endp_num);
@@ -91,7 +93,7 @@ void nak_callback(uint8_t endp_num)
 {
 	if (!nak_received && endp_num == EP_IN)
 	{
-		LOG("nak received \r\n");
+		// LOG("nak received \r\n");
 		if (in_transfer_total_sent == in_transfer_length)
 		{
 			in_transfer_total_sent = 0;
@@ -100,7 +102,7 @@ void nak_callback(uint8_t endp_num)
 		in_transfer_last_sent = MIN(in_transfer_length - in_transfer_total_sent, usb_device_0.endpoints.tx[EP_IN].max_packet_size_with_burst);
 		memcpy(endp2_tx_buffer, temp_in_buffer + in_transfer_total_sent, in_transfer_last_sent);
 		endp_tx_set_new_buffer(&usb_device_0, EP_IN, endp2_tx_buffer, in_transfer_last_sent);
-		LOG("end nak received");
+		// LOG("end nak received");
 	}
 }
 
@@ -118,7 +120,7 @@ uint16_t endp0_user_handled_control_request(USB_SETUP* request,
 {
 	if (request->bRequest == 10)
 	{
-		LOG("writing %x %x %x %x \r\n", endp0_buffer[0], endp0_buffer[1], endp0_buffer[2], endp0_buffer[3]);
+		// LOG("writing %x %x %x %x \r\n", endp0_buffer[0], endp0_buffer[1], endp0_buffer[2], endp0_buffer[3]);
 		memcpy(last_out_buffer, endp0_buffer, request->wLength);
 		last_out_total_sent = request->wLength;
 		return 0x00;
@@ -126,7 +128,7 @@ uint16_t endp0_user_handled_control_request(USB_SETUP* request,
 	else if (request->bRequest == 20)
 	{
 		in_transfer_length = request->wValue.bw.bb1 | (request->wIndex.bw.bb1 << 8);
-		LOG("requested %d bytes \r\n", in_transfer_length);
+		// LOG("requested %d bytes \r\n", in_transfer_length);
 		generate_data(usb2_backend_current_device->endpoints.rx[0].buffer, in_transfer_length);
 		*buffer = usb2_backend_current_device->endpoints.rx[0].buffer;
 		return in_transfer_length;
@@ -134,7 +136,7 @@ uint16_t endp0_user_handled_control_request(USB_SETUP* request,
 	else if (request->bRequest == 1)
 	{
 		in_transfer_length = request->wValue.bw.bb1 | (request->wIndex.bw.bb1 << 8);
-		LOG("in transfer length %d \r\n", in_transfer_length);
+		// LOG("in transfer length %d \r\n", in_transfer_length);
 		generate_data(temp_in_buffer, in_transfer_length);
 		in_transfer_total_sent = 0;
 		in_transfer_last_sent = 0;
@@ -143,12 +145,12 @@ uint16_t endp0_user_handled_control_request(USB_SETUP* request,
 	else if (request->bRequest == 2)
 	{
 		*buffer = last_out_buffer;
-		LOG("returning last out buffer %d\r\n", last_out_total_sent);
+		// LOG("returning last out buffer %d\r\n", last_out_total_sent);
 		return last_out_total_sent;
 	}
 	else if (request->bRequest == 3)
 	{
-		LOG("reset out buffer head\r\n");
+		// LOG("reset out buffer head\r\n");
 		out_total_sent = 0;
 		return 0x00;
 	}
@@ -160,6 +162,12 @@ void usb2_device_handle_bus_reset(void)
 {
 	LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "bus reset \r\n");
 }
+
+#define TMR_CLOCK_CYCLES 100000
+#define TMR_US 1000
+
+__attribute__((interrupt("WCH-Interrupt-fast"))) void TMR0_IRQHandler(void);
+
 /*********************************************************************
  * @fn      main
  *
@@ -169,12 +177,24 @@ void usb2_device_handle_bus_reset(void)
  */
 int main()
 {
+	PFIC_SetPriority(INT_ID_TMR0, 0xa0);
+	PFIC_SetPriority(INT_ID_LINK, 0x90);
+	PFIC_SetPriority(INT_ID_USBHS, 0xc0);
+	PFIC_HaltPushCfg(ENABLE);
+	PFIC_INTNestCfg(DISABLE);
+	PFIC_SetFastIRQ((uint32_t)LINK_IRQHandler, INT_ID_LINK, 0);
+	PFIC_SetFastIRQ((uint32_t)TMR0_IRQHandler, INT_ID_TMR0, 1);
+	PFIC_SetFastIRQ((uint32_t)USBHS_IRQHandler, INT_ID_USBHS, 2);
 	// Initialize board
 	bsp_gpio_init();
 	bsp_init(FREQ_SYS);
 
 	LOG_INIT(FREQ_SYS);
 	LOG("USB stress test\r\n");
+
+	TMR0_TimerInit(bsp_get_nbtick_1us() * TMR_US);
+	R8_TMR0_INTER_EN = RB_TMR_IE_CYC_END;
+	PFIC_EnableIRQ(TMR0_IRQn);
 
 	usb_device_0.endpoints.endp0_user_handled_control_request = endp0_user_handled_control_request;
 	usb_device_0.endpoints.tx_complete[2] = endp2_tx_complete;
@@ -261,65 +281,22 @@ int main()
 		init_endpoints_ss();
 		usb30_device_init(false);
 	}
+}
 
-	// Infinite loop USB2/USB3 managed with Interrupt
-	while (1)
+/*******************************************************************************
+ * @fn     TMR0_IRQHandler
+ * @return None
+ */
+__attribute__((interrupt("WCH-Interrupt-fast"))) void TMR0_IRQHandler(void)
+{
+	R8_TMR0_INT_FLAG = RB_TMR_IF_CYC_END;
+	// LOG("clock \r\n");
+	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(EP_OUT);
+	vuint8_t _RX_CTRL = *RX_CTRL;
+	if (_RX_CTRL & UEP_R_RES_NAK)
 	{
-		if (bsp_ubtn())
-		{
-			blink_ms = BLINK_FAST;
-			bsp_uled_on();
-			bsp_wait_ms_delay(blink_ms);
-			bsp_uled_off();
-			bsp_wait_ms_delay(blink_ms);
-			LOG_DUMP();
-		}
-		else
-		{
-			if (usb_device_0.state == CONFIGURED)
-			{
-				switch (usb_device_0.speed)
-				{
-				case USB2_LOWSPEED: // USB2
-				case USB2_FULLSPEED:
-				case USB2_HIGHSPEED: {
-					if (usb_device_0.speed != usb_device_old_speed)
-					{
-						usb_device_old_speed = usb_device_0.speed;
-						LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "USB2\n");
-					}
-					blink_ms = BLINK_USB2;
-					bsp_uled_on();
-					bsp_wait_ms_delay(blink_ms);
-					bsp_uled_off();
-					bsp_wait_ms_delay(blink_ms);
-				}
-				break;
-				case USB30_SUPERSPEED: // USB3
-				{
-					if (usb_device_0.speed != usb_device_old_speed)
-					{
-						usb_device_old_speed = usb_device_0.speed;
-						LOG_IF_LEVEL(LOG_LEVEL_DEBUG, "USB3\n");
-					}
-					blink_ms = BLINK_USB3;
-					bsp_uled_on();
-					bsp_wait_ms_delay(blink_ms);
-					bsp_uled_off();
-					bsp_wait_ms_delay(blink_ms);
-				}
-				break;
-				case SPEED_NONE:
-				default:
-					bsp_uled_on(); // LED is steady until USB3 SS or USB2 HS is ready
-					break;
-				}
-			}
-			else
-			{
-				bsp_uled_on(); // LED is steady until USB3 SS or USB2 HS is ready
-			}
-		}
+		LOG("set state\r\n");
+		endp_rx_set_state(&usb_device_0, 1, ENDP_STATE_ACK);
 	}
 }
 

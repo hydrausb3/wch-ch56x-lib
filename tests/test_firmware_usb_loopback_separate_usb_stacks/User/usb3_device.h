@@ -19,9 +19,9 @@ limitations under the License.
 #define USB3_DEVICE_USER_H
 
 #include "definitions.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 extern const USB_STRING_DESCR* usb3_board_string_descriptors_array[2];
 

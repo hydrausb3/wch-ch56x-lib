@@ -17,7 +17,7 @@ limitations under the License.
 
 ********************************************************************************/
 
-#include "wch-ch56x-lib/HSPIDevice/hspi.h"
+#include "wch-ch56x-lib/hspi/hspi.h"
 #include "wch-ch56x-lib/logging/logging.h"
 #include <stdint.h>
 

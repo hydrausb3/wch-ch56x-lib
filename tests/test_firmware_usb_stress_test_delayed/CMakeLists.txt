@@ -1,4 +1,4 @@
-project(test_firmware_usb_loopback LANGUAGES C)
+project(test_firmware_usb_stress_test_delayed LANGUAGES C)
 set(CMAKE_EXECUTABLE_SUFFIX_C ".elf")
 
 add_executable(${PROJECT_NAME})
@@ -47,7 +47,7 @@ endif()
 ##### Compilation and linkage options
 
 target_compile_options(${PROJECT_NAME} PRIVATE
-    -Werror -Wno-comment -pedantic -Wall -Wno-error=unused-parameter
+    -Werror -Warray-bounds=2 -Wno-comment -pedantic -Wall -Wno-error=unused-parameter
     -Wbad-function-cast -Wredundant-decls -Wmissing-prototypes -Wchar-subscripts -Wshadow -Wundef -Wwrite-strings -Wunused -Wuninitialized -Wpointer-arith -Winline -Wformat -Wformat-security -Winit-self -Wmissing-include-dirs -Wnested-externs -Wmissing-declarations -Wempty-body -Wignored-qualifiers -Wmissing-field-initializers -Wtype-limits -Wcast-align -Wswitch-enum
     -Wextra -Wclobbered -Wcast-function-type -Wimplicit-fallthrough=3 -Wmissing-parameter-type -Wold-style-declaration -Woverride-init -Wshift-negative-value -Wunused-but-set-parameter
 )
@@ -70,7 +70,7 @@ else()
     message("Toolchain not found")
 endif()
 
-target_compile_options(${PROJECT_NAME} PRIVATE -std=gnu99 -MMD -MP -mabi=ilp32 -msmall-data-limit=8 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections)
+target_compile_options(${PROJECT_NAME} PRIVATE -std=gnu99 -MMD -MP  -g -mno-strict-align -mabi=ilp32 -msmall-data-limit=8 -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections)
 target_compile_options(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:-Og> $<$<CONFIG:Release>:-Oz>)
 target_link_options(${PROJECT_NAME} PRIVATE -T "${CMAKE_CURRENT_LIST_DIR}/.ld" -nostartfiles  LINKER:--gc-sections LINKER:--print-memory-usage -Wl,-Map,${PROJECT_NAME}.map --specs=nano.specs --specs=nosys.specs)
 target_link_libraries(${PROJECT_NAME} wch-ch56x-lib-scheduled)

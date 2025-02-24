@@ -19,7 +19,7 @@ limitations under the License.
 #define USB2_DEVICE_DESCRIPTOR_ALT_ENDPOINTS_H
 
 #include "definitions.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
 
 const uint8_t* usb2_device_configs_alt_endpoints[1];
 

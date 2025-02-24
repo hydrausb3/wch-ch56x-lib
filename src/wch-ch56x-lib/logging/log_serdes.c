@@ -18,7 +18,7 @@ limitations under the License.
 
 #include "wch-ch56x-lib/logging/log_serdes.h"
 #include "wch-ch56x-lib/logging/nanoprintf_impl.h"
-#include "wch-ch56x-lib/SerDesDevice/serdes.h"
+#include "wch-ch56x-lib/serdes/serdes.h"
 #include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdarg.h>
 

@@ -47,9 +47,9 @@ USB3.0/USB2.0 management in the back.
 #pragma GCC diagnostic pop
 
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
-#include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb_types.h"
 #include "wch-ch56x-lib/utils/critical_section.h"
 #include <stdint.h>
 
