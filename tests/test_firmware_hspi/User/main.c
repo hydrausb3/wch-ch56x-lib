@@ -28,11 +28,11 @@ limitations under the License.
 
 #include "wch-ch56x-lib/HSPIDevice/hspi.h"
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb20.h"
-#include "wch-ch56x-lib/USBDevice/usb30.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb20.h"
+#include "wch-ch56x-lib/usb/usb30.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 #undef FREQ_SYS
 /* System clock / MCU frequency in Hz (lowest possible speed 15MHz) */

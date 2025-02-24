@@ -33,8 +33,8 @@ limitations under the License.
 
 #include "usb_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb2_utils.h"
-#include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/usb/usb2_utils.h"
+#include "wch-ch56x-lib/usb/usb_types.h"
 
 #ifdef __cplusplus
 extern "C" {

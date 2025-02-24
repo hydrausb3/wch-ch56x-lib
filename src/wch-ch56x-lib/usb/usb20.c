@@ -17,9 +17,9 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/USBDevice/usb20.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb20.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 #define USB2_UNSUPPORTED_ENDPOINTS                                        \
 	((ENDPOINT_8_TX | ENDPOINT_8_RX | ENDPOINT_9_TX | ENDPOINT_9_RX |     \

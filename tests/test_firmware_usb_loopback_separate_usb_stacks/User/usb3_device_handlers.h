@@ -20,7 +20,7 @@ limitations under the License.
 
 #include "usb3_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
 
 void usb3_board_endp1_tx_complete(TRANSACTION_STATUS status);
 void usb3_board_endp1_tx_complete(TRANSACTION_STATUS status) {}

@@ -17,11 +17,11 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/USBDevice/usb30.h"
-#include "wch-ch56x-lib/USBDevice/usb20.h"
-#include "wch-ch56x-lib/USBDevice/usb30_utils.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb30.h"
+#include "wch-ch56x-lib/usb/usb20.h"
+#include "wch-ch56x-lib/usb/usb30_utils.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 #define ENDP0_MAX_PACKET_SIZE 512
 

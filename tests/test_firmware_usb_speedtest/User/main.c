@@ -30,10 +30,10 @@ limitations under the License.
 #include "usb3_device_descriptors.h"
 #include "usb_device.h"
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb20.h"
-#include "wch-ch56x-lib/USBDevice/usb30.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb20.h"
+#include "wch-ch56x-lib/usb/usb30.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 uint8_t reception_buffer[ENDP_1_15_MAX_PACKET_SIZE * DEF_ENDP_IN_BURST_LEVEL];
 __attribute__((aligned(16)))

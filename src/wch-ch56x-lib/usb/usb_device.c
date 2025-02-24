@@ -15,7 +15,7 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
 
 uint16_t _default_endp0_user_handled_control_request(USB_SETUP* request,
 													 uint8_t** buffer);

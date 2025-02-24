@@ -18,8 +18,8 @@ limitations under the License.
 #ifndef TEST_USBDEVICE_H
 #define TEST_USBDEVICE_H
 
-#include "wch-ch56x-lib/USBDevice/usb_device.h"
-#include "wch-ch56x-lib/USBDevice/usb_endpoints.h"
+#include "wch-ch56x-lib/usb/usb_device.h"
+#include "wch-ch56x-lib/usb/usb_endpoints.h"
 
 bool test_usb_device(void);
 

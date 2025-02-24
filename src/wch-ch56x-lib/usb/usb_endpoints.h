@@ -22,7 +22,7 @@ limitations under the License.
 #include <stdint.h>
 #include <string.h>
 
-#include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/usb/usb_types.h"
 
 #ifdef __cplusplus
 extern "C" {

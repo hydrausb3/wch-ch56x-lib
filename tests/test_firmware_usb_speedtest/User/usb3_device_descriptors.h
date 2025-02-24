@@ -19,7 +19,7 @@ limitations under the License.
 #define USB3_DEVICE_DESCRIPTOR_H
 
 #include "definitions.h"
-#include "wch-ch56x-lib/USBDevice/usb_descriptors.h"
+#include "wch-ch56x-lib/usb/usb_descriptors.h"
 
 uint8_t device_capabilities_1[4] = { 0x1e, 0xf4, 0x00, 0x00 };
 uint8_t device_capabilities_2[7] = { 0x00, 0x0c, 0x00, 0x02, 0x0a, 0xff, 0x07 };

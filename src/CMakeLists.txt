@@ -13,10 +13,10 @@ target_sources(wch-ch56x-lib INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/ramx_alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/SerDesDevice/serdes.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb_device.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb_endpoints.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb20.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb30.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_device.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_endpoints.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb20.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb30.c
     )
 
 target_include_directories(wch-ch56x-lib INTERFACE ${CMAKE_CURRENT_LIST_DIR})
@@ -39,10 +39,10 @@ target_sources(wch-ch56x-lib-scheduled INTERFACE
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/memory/ramx_alloc.c
     ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/SerDesDevice/serdes.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb_device.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb_endpoints.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb20.c
-    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/USBDevice/usb30.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_device.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb_endpoints.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb20.c
+    ${CMAKE_CURRENT_LIST_DIR}/wch-ch56x-lib/usb/usb30.c
     )
 
 target_include_directories(wch-ch56x-lib-scheduled INTERFACE ${CMAKE_CURRENT_LIST_DIR})

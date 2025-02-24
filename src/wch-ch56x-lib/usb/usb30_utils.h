@@ -32,7 +32,7 @@ limitations under the License.
 #pragma GCC diagnostic pop
 
 #include "wch-ch56x-lib/logging/logging.h"
-#include "wch-ch56x-lib/USBDevice/usb_types.h"
+#include "wch-ch56x-lib/usb/usb_types.h"
 
 #ifdef __cplusplus
 extern "C" {
