@@ -903,14 +903,21 @@ usb2_out_transfer_handler(uint8_t endp_num, uint16_t num_bytes_received)
 		else if (endp_num == 0 && !(usb_setup_req.bRequestType & USB_REQ_TYP_IN) && (usb_setup_req_data_size >= usb_setup_req.wLength))
 		{
 			// prepare STATUS
-			_RX_CTRL = UEP_R_RES_ACK | RB_UEP_R_TOG_1;
+			_RX_CTRL = UEP_R_RES_NAK | RB_UEP_R_TOG_1;
 			_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
 			*TX_CTRL = _TX_CTRL;
 		}
 		else
 		{
 			_RX_CTRL = (_RX_CTRL & ~RB_UEP_RRES_MASK) | endp->state;
-			_RX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
+			/* switch between DATA0/DATA1 toggle but not before ACK:
+			test_firmware_usb_stress_test_delayed showed that delaying ACK but setting the toggle immediately was creating duplicated packets,
+			incomplete packets.
+			One explanation could be that the USB controller uses the toggles as basis to add the packets to its internal FIFO but not the endpoint status, which means
+			the packets would be in the FIFO and moved to our buffer using DMA when we switch the endpoint to ACK (even though the endpoint status was NAK).endp
+			*/
+			if (endp->state == ENDP_STATE_ACK)
+				_RX_CTRL ^= RB_UEP_T_TOG_1;
 		}
 	}
 	else
@@ -926,6 +933,8 @@ void usb2_endp_rx_set_state_callback(uint8_t endp_num)
 
 	vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(endp_num);
 	vuint8_t _RX_CTRL = *RX_CTRL;
+	if (((_RX_CTRL & RB_UEP_RRES_MASK) != UEP_R_RES_ACK) && endp->state == ENDP_STATE_ACK)
+		_RX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
 	_RX_CTRL = (_RX_CTRL & ~RB_UEP_TRES_MASK) | endp->state;
 	*RX_CTRL = _RX_CTRL;
 }
@@ -1009,7 +1018,9 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 			vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(0);
 			vuint8_t _RX_CTRL = *RX_CTRL;
 			_TX_CTRL = UEP_T_RES_NAK | RB_UEP_T_TOG_1;
-			_RX_CTRL = endp0->state | RB_UEP_T_TOG_1;
+			_RX_CTRL = (_RX_CTRL & ~RB_UEP_RRES_MASK) | endp0->state;
+			if (endp0->state == ENDP_STATE_ACK)
+				_RX_CTRL ^= RB_UEP_T_TOG_1; // switch between DATA0/DATA1 toggle
 			*TX_CTRL = _TX_CTRL;
 			*RX_CTRL = _RX_CTRL;
 		}
@@ -1035,33 +1046,19 @@ __attribute__((interrupt("WCH-Interrupt-fast"))) void USBHS_IRQHandler(void)
 		}
 		else if (usb_pid == PID_OUT)
 		{
-			vuint8_t* RX_CTRL = usb2_get_rx_endpoint_ctrl_reg(usb_dev_endp);
-			vuint8_t _RX_CTRL = *RX_CTRL;
 			if (!togok)
 			{
-				_RX_CTRL = (_RX_CTRL & ~RB_UEP_RRES_MASK) | usb2_backend_current_device->endpoints.rx[usb_dev_endp].state;
-				*RX_CTRL = _RX_CTRL;
 				R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
 				return;
 			}
 
-			// WCH569 will trigger an interrupt for a DATA packet, even if RX_CTRL was set to NAK
-			// discard this packet, as even though data has been received it shouldn't be taken into account
-			if (!(_RX_CTRL & (UEP_R_RES_NAK | UEP_R_RES_STALL)))
+			if (usb_dev_endp != 0 || ep0_passthrough_enabled)
 			{
-				if (usb_dev_endp != 0 || ep0_passthrough_enabled)
-				{
-					usb2_out_transfer_handler(usb_dev_endp, num_bytes_received);
-				}
-				else
-				{
-					usb2_ep0_out_handler();
-				}
+				usb2_out_transfer_handler(usb_dev_endp, num_bytes_received);
 			}
 			else
 			{
-				_RX_CTRL = (_RX_CTRL & ~RB_UEP_RRES_MASK) | usb2_backend_current_device->endpoints.rx[usb_dev_endp].state;
-				*RX_CTRL = _RX_CTRL;
+				usb2_ep0_out_handler();
 			}
 		}
 		R8_USB_INT_FG = RB_USB_IF_TRANSFER; // Clear interrupt flag
