@@ -17,7 +17,7 @@ limitations under the License.
 
 *******************************************************************************/
 
-#include "wch-ch56x-lib/HSPIDeviceScheduled/hspi_scheduled.h"
+#include "wch-ch56x-lib/hspi_scheduled/hspi_scheduled.h"
 #include "wch-ch56x-lib/interrupt_queue/interrupt_queue.h"
 #include "wch-ch56x-lib/logging/log_to_buffer.h"
 #include "wch-ch56x-lib/logging/logging.h"

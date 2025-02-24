@@ -29,7 +29,7 @@ limitations under the License.
 #include "usb2_device_descriptors.h"
 #include "usb3_device_descriptors.h"
 #include "usb_device.h"
-#include "wch-ch56x-lib/HSPIDevice/hspi.h"
+#include "wch-ch56x-lib/hspi/hspi.h"
 #include "wch-ch56x-lib/logging/logging.h"
 #include "wch-ch56x-lib/serdes/serdes.h"
 #include "wch-ch56x-lib/usb/usb20.h"

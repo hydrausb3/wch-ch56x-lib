@@ -18,7 +18,7 @@ limitations under the License.
 *******************************************************************************/
 
 /**
-HSPIDeviceScheduled uses an interrupt queue to process RX and TX interrupts.
+hspi_scheduled uses an interrupt queue to process RX and TX interrupts.
 It uses a statically allocated pool to save call arguments for use when the
 function is scheduled.
 */
